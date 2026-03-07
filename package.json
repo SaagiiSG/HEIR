@@ -14,13 +14,26 @@
     "react-dom": "19.2.3"
   },
   "devDependencies": {
+    "@hookform/resolvers": "^5.2.2",
+    "@supabase/ssr": "^0.8.0",
+    "@supabase/supabase-js": "^2.97.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "clsx": "^2.1.1",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "framer-motion": "^12.34.3",
+    "lucide-react": "^0.575.0",
+    "next-intl": "^4.8.3",
+    "puppeteer": "^24.38.0",
+    "qrcode.react": "^4.2.0",
+    "react-hook-form": "^7.71.2",
+    "resend": "^6.9.2",
+    "tailwind-merge": "^3.5.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "zod": "^4.3.6"
   }
 }

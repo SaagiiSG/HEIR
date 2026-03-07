@@ -1,26 +1,56 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --fz-xs: 11px;
+  --fz-s: 12px;
+  --fz-m: 13px;
+  --fz-base: 14px;
+  --fz-l: 15px;
+  --fz-xl: 16px;
+  --fz-xxl: 17px;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: "ABCDiatype", "Yu Gothic Medium", "Hiragino Kaku Gothic ProN", "YuGothic", sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Mongolian letter-spacing — unlayered to override all Tailwind utilities */
+html[lang="mn"] {
+  letter-spacing: -0.02rem;
+}
+
+html[lang="mn"] header,
+html[lang="mn"] header * {
+  letter-spacing: normal;
+}
+
+/* Hide scrollbar but keep scroll functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+@layer base {
+  :focus-visible {
+    outline: 2px solid black;
+    outline-offset: 2px;
   }
-}
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  body {
+    font-family: "ABCDiatype", "Yu Gothic Medium", "Hiragino Kaku Gothic ProN", "YuGothic", sans-serif;
+    font-size: 14px;
+    line-height: 1;
+    color: #000;
+    font-feature-settings: "palt";
+    -webkit-font-smoothing: antialiased;
+    background: #fff;
+  }
+
+  a {
+    text-decoration: none;
+    color: inherit;
+  }
 }

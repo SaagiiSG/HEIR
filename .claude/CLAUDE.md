@@ -3,8 +3,9 @@
 ## Workflow
 
 When the user provides a reference image (screenshot) and optionally some CSS classes or style notes:
-read the PRD file and intialize next.js project and 
-1. **Generate** a landing page using Tailwind CSS (via CDN). Include all content inline — no external files unless requested.
+also read the e-commerce_prd_creation_c6a7e7aa.plna.md for the full scope of this project
+1. **Generate** a next.js landing page using Tailwind CSS (via CDN). Include all content inline — no external files unless requested.
+
 2. **Screenshot** the rendered page using Puppeteer (`npx puppeteer screenshot index.html --fullpage` or equivalent). If the page has distinct sections, capture those individually too.
 3. **Compare** your screenshot against the reference image. Check for mismatches in:
    - Spacing and padding (measure in px)
