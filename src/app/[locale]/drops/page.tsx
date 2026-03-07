@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { DropCard, type DropCardData } from "@/components/drops/DropCard";
+import { createClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
 
 interface DropsPageProps {
@@ -21,13 +22,12 @@ export default async function DropsPage({ params }: DropsPageProps) {
   const { locale } = await params;
   await getTranslations({ locale });
 
-  // TODO: Fetch drops from Supabase
-  // const supabase = await createClient();
-  // const { data: drops } = await supabase
-  //   .from('drops')
-  //   .select('*, drop_products(count)')
-  //   .order('starts_at', { ascending: false });
-  const drops: DropCardData[] = [];
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("drops")
+    .select("*, drop_products(count)")
+    .order("starts_at", { ascending: false });
+  const drops: DropCardData[] = (data as DropCardData[]) ?? [];
 
   const activeDrops = drops.filter((d) => d.is_active && (!d.ends_at || new Date(d.ends_at) > new Date()));
   const upcomingDrops = drops.filter((d) => !d.is_active && new Date(d.starts_at) > new Date());
@@ -81,10 +81,9 @@ export default async function DropsPage({ params }: DropsPageProps) {
 
       {drops.length === 0 && (
         <div className="py-24 text-center">
-          <p className="text-[15px] text-gray-400 mb-2">
+          <p className="text-[15px] text-gray-400">
             {locale === "mn" ? "Drops удахгүй нэмэгдэнэ" : "Drops coming soon"}
           </p>
-          <p className="text-[11px] text-gray-300">TODO: fetch from Supabase</p>
         </div>
       )}
     </main>

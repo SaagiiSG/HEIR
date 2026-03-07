@@ -9,7 +9,7 @@ export default async function AddressesPage({ params }: AddressesPageProps) {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "account" });
 
-  // TODO: Fetch addresses from Supabase
+  // Saved addresses are not yet implemented — address is collected at checkout.
   const addresses: Array<{ id: string; label: string; address1: string; city: string }> = [];
 
   return (
@@ -39,9 +39,9 @@ export default async function AddressesPage({ params }: AddressesPageProps) {
         </div>
       )}
 
-      <div className="mt-6">
-        <p className="text-[11px] font-mono text-gray-300">
-          TODO: Add/edit/delete address CRUD with Supabase
+      <div className="mt-6 text-center">
+        <p className="text-[11px] text-gray-300">
+          {locale === "mn" ? "Хаяг хадгалах боломж удахгүй нэмэгдэнэ" : "Saved addresses coming soon"}
         </p>
       </div>
     </main>

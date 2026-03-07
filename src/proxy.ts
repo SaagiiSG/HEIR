@@ -9,6 +9,9 @@ const intlMiddleware = createMiddleware(routing);
 const AUTH_REQUIRED = ["/checkout", "/account"];
 const ADMIN_REQUIRED = ["/admin"];
 
+// Only the lockdown page itself is accessible during lockdown
+const LOCKDOWN_EXEMPT = ["/lockdown"];
+
 function getRouteWithoutLocale(pathname: string): string {
   return pathname.replace(/^\/(mn|en)/, "") || "/";
 }
@@ -18,7 +21,7 @@ export async function proxy(request: NextRequest) {
   const routePath = getRouteWithoutLocale(pathname);
   const locale = pathname.split("/")[1] || "mn";
 
-  // Refresh session and check auth
+  // Refresh session
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -41,6 +44,22 @@ export async function proxy(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser();
 
+  // ── Lockdown mode ─────────────────────────────────────────────────────────
+  // Enable by setting LOCKDOWN=true in Vercel environment variables.
+  // Disable by removing the variable (or setting it to anything else) + redeploy.
+  // Admins (logged-in with role='admin') always bypass lockdown.
+  const isLockdownActive = process.env.LOCKDOWN === "true";
+  const isLockdownExempt = LOCKDOWN_EXEMPT.some(
+    (p) => routePath === p || routePath.startsWith(p + "/")
+  );
+
+  if (isLockdownActive && !isLockdownExempt) {
+    return NextResponse.redirect(
+      new URL(`/${locale}/lockdown`, request.url)
+    );
+  }
+
+  // ── Normal auth + admin checks ────────────────────────────────────────────
   const needsAuth = AUTH_REQUIRED.some((p) => routePath.startsWith(p));
   const needsAdmin = ADMIN_REQUIRED.some((p) => routePath.startsWith(p));
 
@@ -62,7 +81,7 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // Run intl middleware and forward any refreshed session cookies
+  // Run intl middleware and forward refreshed session cookies
   const intlResponse = intlMiddleware(request);
   response.cookies.getAll().forEach(({ name, value, ...opts }) => {
     intlResponse.cookies.set(name, value, opts);

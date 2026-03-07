@@ -60,7 +60,7 @@ export async function sendOrderConfirmation(params: {
          style="display:inline-block;border:1px solid #000;border-radius:99px;padding:10px 24px;font-size:12px;text-decoration:none;color:#000;">
         ${isMn ? "Захиалга харах" : "View Order"}
       </a>
-      <p style="font-size:11px;color:#999;margin-top:40px;">© 2024 HEIR</p>
+      <p style="font-size:11px;color:#999;margin-top:40px;">© 2026 HEIR</p>
     </body>
     </html>
   `;
@@ -95,7 +95,7 @@ export async function sendPasswordReset(params: {
         <p style="font-size:11px;color:#999;">
           ${isMn ? "Хэрэв та хүсэлт явуулаагүй бол энэ захидлыг үл тоомсорлоно уу." : "If you didn't request this, please ignore this email."}
         </p>
-        <p style="font-size:11px;color:#999;margin-top:40px;">© 2024 HEIR</p>
+        <p style="font-size:11px;color:#999;margin-top:40px;">© 2026 HEIR</p>
       </body>
       </html>
     `,

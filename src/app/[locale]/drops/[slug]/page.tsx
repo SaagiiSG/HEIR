@@ -5,36 +5,29 @@ import type { ProductCardData } from "@/components/product/ProductCard";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Image from "next/image";
+import { createClient } from "@/lib/supabase/server";
 
 interface DropDetailPageProps {
   params: Promise<{ locale: string; slug: string }>;
 }
 
-// Placeholder — TODO replace with Supabase fetch
-const MOCK_DROP = {
-  id: "1",
-  slug: "ss26-launch",
-  title_mn: "SS26 Нээлт",
-  title_en: "SS26 Launch",
-  description_mn:
-    "2026 оны хавар-зуны цуглуулгын нээлт. Монгол ноосоор хийсэн онцгой загварууд.",
-  description_en:
-    "The launch of our Spring/Summer 2026 collection. Exclusive pieces crafted from Mongolian wool.",
-  image_url: "",
-  starts_at: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-  ends_at: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
-  is_active: false,
-};
-
 export async function generateMetadata({ params }: DropDetailPageProps): Promise<Metadata> {
   const { locale, slug } = await params;
-  // TODO: fetch real drop metadata from Supabase
-  const title = locale === "mn" ? MOCK_DROP.title_mn : MOCK_DROP.title_en;
-  const description = locale === "mn" ? MOCK_DROP.description_mn : MOCK_DROP.description_en;
+  const supabase = await createClient();
+  const { data: drop } = await supabase
+    .from("drops")
+    .select("title_mn, title_en, description_mn, description_en, image_url")
+    .eq("slug", slug)
+    .single();
+
+  if (!drop) return { title: "Drop Not Found" };
+
+  const title = locale === "mn" ? drop.title_mn : drop.title_en;
+  const description = locale === "mn" ? drop.description_mn : drop.description_en;
   return {
     title,
     description,
-    openGraph: { title, description, images: MOCK_DROP.image_url ? [MOCK_DROP.image_url] : [] },
+    openGraph: { title, description, images: drop.image_url ? [drop.image_url] : [] },
   };
 }
 
@@ -42,12 +35,13 @@ export default async function DropDetailPage({ params }: DropDetailPageProps) {
   const { locale, slug } = await params;
   await getTranslations({ locale });
 
-  // TODO: Fetch drop from Supabase by slug
-  // const supabase = await createClient();
-  // const { data: drop } = await supabase.from('drops').select('*, drop_products(products(*))').eq('slug', slug).single();
-  // if (!drop) notFound();
+  const supabase = await createClient();
+  const { data: drop } = await supabase
+    .from("drops")
+    .select("*, drop_products(products(*))")
+    .eq("slug", slug)
+    .single();
 
-  const drop = MOCK_DROP.slug === slug ? MOCK_DROP : null;
   if (!drop) notFound();
 
   const title = locale === "mn" ? drop.title_mn : drop.title_en;
@@ -55,7 +49,9 @@ export default async function DropDetailPage({ params }: DropDetailPageProps) {
   const isUpcoming = new Date(drop.starts_at) > new Date();
   const isLive = drop.is_active && (!drop.ends_at || new Date(drop.ends_at) > new Date());
 
-  const products: ProductCardData[] = []; // TODO: from drop.drop_products
+  const products: ProductCardData[] = (drop.drop_products ?? [])
+    .map((dp: { products: ProductCardData | null }) => dp.products)
+    .filter(Boolean) as ProductCardData[];
 
   return (
     <main>
@@ -123,8 +119,8 @@ export default async function DropDetailPage({ params }: DropDetailPageProps) {
           </div>
           <ProductGrid products={products} locale={locale} />
           {products.length === 0 && (
-            <p className="text-[11px] text-gray-300 text-center font-mono mt-4">
-              TODO: fetch drop products from Supabase
+            <p className="text-[13px] text-gray-400 text-center mt-4">
+              {locale === "mn" ? "Бараа удахгүй нэмэгдэнэ" : "Products coming soon"}
             </p>
           )}
         </section>

@@ -40,7 +40,7 @@ export async function saveSiteSettings(
       .update({
         announcement_mn: settings.announcement_mn,
         announcement_en: settings.announcement_en,
-        shipping_fee: settings.shipping_fee,
+        shipping_fee: Math.max(0, settings.shipping_fee),
         updated_at: new Date().toISOString(),
       })
       .eq("id", "default");
