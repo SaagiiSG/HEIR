@@ -11,6 +11,7 @@ import { PageTransitionWrapper } from "@/components/ui/PageTransitionWrapper";
 import { getSiteSettings } from "@/lib/actions/settings";
 import { notFound } from "next/navigation";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/next";
 
 interface LocaleLayoutProps {
   children: React.ReactNode;
@@ -95,6 +96,7 @@ export default async function LocaleLayout({
           </CartProvider>
         </NextIntlClientProvider>
         <SpeedInsights />
+        <Analytics />
       </body>
     </html>
   );
