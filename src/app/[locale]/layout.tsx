@@ -10,6 +10,7 @@ import { CartDrawer } from "@/components/cart/CartDrawer";
 import { PageTransitionWrapper } from "@/components/ui/PageTransitionWrapper";
 import { getSiteSettings } from "@/lib/actions/settings";
 import { notFound } from "next/navigation";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 interface LocaleLayoutProps {
   children: React.ReactNode;
@@ -93,6 +94,7 @@ export default async function LocaleLayout({
             <CartDrawer />
           </CartProvider>
         </NextIntlClientProvider>
+        <SpeedInsights />
       </body>
     </html>
   );
