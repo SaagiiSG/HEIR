@@ -1,7 +1,15 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { sendOrderConfirmation } from "@/lib/email";
 
+const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET;
+
 export async function POST(request: NextRequest) {
+  // Verify the request comes from an internal server action
+  const authHeader = request.headers.get("x-internal-secret");
+  if (!INTERNAL_SECRET || authHeader !== INTERNAL_SECRET) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const { to, name, orderId, items, total, locale = "mn" } = body;
@@ -9,9 +17,6 @@ export async function POST(request: NextRequest) {
     if (!to || !orderId) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
-
-    // TODO: Verify this request is coming from an authenticated server action
-    // (add a shared secret or verify Supabase service role)
 
     const result = await sendOrderConfirmation({ to, name, orderId, items, total, locale });
 
