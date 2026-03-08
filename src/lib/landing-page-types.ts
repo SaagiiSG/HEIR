@@ -35,6 +35,12 @@ export interface FaqItem {
   answer_mn: string;
 }
 
+export interface ReviewScreenshot {
+  id: string;
+  imageUrl: string;
+  caption?: string;
+}
+
 export interface LandingPageConfig {
   hero: {
     imageUrl: string;
@@ -50,6 +56,7 @@ export interface LandingPageConfig {
   exclusive: NewInSlot[]; // always 4 elements — Heir Exclusive section
   collections: CollectionSlot[]; // always 8 elements
   featuredReviews: FeaturedReview[]; // up to 6 curated reviews
+  reviewScreenshots: ReviewScreenshot[]; // up to 12 customer review screenshots
   faq: FaqItem[];
   _version: number;
 }
@@ -92,6 +99,7 @@ export const DEFAULT_CONFIG: LandingPageConfig = {
     { productId: null, productName_en: "Coming Soon", productName_mn: "Удахгүй нэмэгдэнэ", productPrice: 0, productImageUrl: "https://placehold.co/400x400/f5f5f5/f5f5f5", productSlug: "", colorSwatches: [PLACEHOLDER_SWATCH] },
   ],
   featuredReviews: [],
+  reviewScreenshots: [],
   faq: [
     { id: "q1", question_en: "What shipping options are available?", question_mn: "Хүргэлтийн ямар сонголтууд байдаг вэ?", answer_en: "We offer standard delivery (3–5 business days) and express delivery (1–2 business days) within Ulaanbaatar. Nationwide shipping is available for select regions.", answer_mn: "Улаанбаатар хотод стандарт хүргэлт (3–5 ажлын өдөр) болон экспресс хүргэлт (1–2 ажлын өдөр) боломжтой. Зарим бүс нутагт улсын хэмжээний хүргэлт бас хийдэг." },
     { id: "q2", question_en: "How long does delivery take?", question_mn: "Хүргэлт хэр хугацаанд ирдэг вэ?", answer_en: "Orders within Ulaanbaatar are typically delivered within 1–3 business days. Nationwide deliveries may take 3–7 business days depending on location.", answer_mn: "Улаанбаатар доторх захиалга 1–3 ажлын өдрийн дотор хүргэгддэг. Орон нутгийн хүргэлт байршлаас хамааран 3–7 ажлын өдөр болдог." },

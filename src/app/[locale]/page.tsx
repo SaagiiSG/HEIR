@@ -352,6 +352,32 @@ export default async function HomePage({ params }: HomePageProps) {
         </FadeIn>
       )}
 
+      {/* ── Review Screenshots ── */}
+      {(config.reviewScreenshots ?? []).length > 0 && (
+        <FadeIn>
+          <section className="py-14 border-t border-gray-200">
+            <h2 className="text-[26px] font-normal leading-[1.15] mb-8 px-5">
+              {isMn ? "Хэрэглэгчдийн зургууд" : "Customer Reviews"}
+            </h2>
+            <div className="flex gap-3 overflow-x-auto pl-5 pr-5 pb-2 scrollbar-hide">
+              {(config.reviewScreenshots ?? []).map((shot) => (
+                <div key={shot.id} className="shrink-0 w-[160px] sm:w-[200px]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={shot.imageUrl}
+                    alt={shot.caption ?? "Customer review screenshot"}
+                    className="w-full aspect-[9/16] object-cover border border-gray-100"
+                  />
+                  {shot.caption && (
+                    <p className="text-[10px] text-gray-400 mt-2 leading-[1.4]">{shot.caption}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        </FadeIn>
+      )}
+
       {/* ── FAQ ── */}
       {(config.faq ?? []).length > 0 && (
         <FadeIn>

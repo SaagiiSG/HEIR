@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useRef } from "react";
 import { X, Star, Plus, Check, Loader2, ChevronUp, ChevronDown, GripVertical } from "lucide-react";
-import type { LandingPageConfig, NewInSlot, CollectionSlot, FeaturedReview, FaqItem } from "@/lib/landing-page-types";
+import type { LandingPageConfig, NewInSlot, CollectionSlot, FeaturedReview, FaqItem, ReviewScreenshot } from "@/lib/landing-page-types";
 import { ProductPicker } from "./ProductPicker";
 import { CollectionSlotModal } from "./CollectionSlotModal";
 import { ReviewPicker } from "./ReviewPicker";
 import { ImageUploadField } from "./ImageUploadField";
 
-type Section = "hero" | "newIn" | "exclusive" | "collections" | "reviews" | "faq" | "announcement";
+type Section = "hero" | "newIn" | "exclusive" | "collections" | "reviews" | "screenshots" | "faq" | "announcement";
 
 interface EditorPanelProps {
   config: LandingPageConfig;
@@ -58,6 +58,7 @@ export function EditorPanel({ config, onChange }: EditorPanelProps) {
     { key: "exclusive", label: "Heir Exclusive" },
     { key: "collections", label: "Collections" },
     { key: "reviews", label: "Reviews" },
+    { key: "screenshots", label: "Screenshots" },
     { key: "faq", label: "FAQ" },
     { key: "announcement", label: "Announcement" },
   ];
@@ -206,6 +207,28 @@ export function EditorPanel({ config, onChange }: EditorPanelProps) {
   function removeFeaturedReview(reviewId: string) {
     const featuredReviews = (config.featuredReviews ?? []).filter((r) => r.reviewId !== reviewId);
     onChange({ ...config, featuredReviews });
+  }
+
+  // ── Review Screenshots ──
+  const screenshots = config.reviewScreenshots ?? [];
+  const [screenshotUploaderKey, setScreenshotUploaderKey] = useState(0);
+
+  function addScreenshot(imageUrl: string) {
+    if (!imageUrl) return;
+    const item: ReviewScreenshot = { id: Date.now().toString(), imageUrl };
+    onChange({ ...config, reviewScreenshots: [...screenshots, item] });
+    setScreenshotUploaderKey((k) => k + 1); // reset uploader
+  }
+
+  function updateScreenshotCaption(id: string, caption: string) {
+    onChange({
+      ...config,
+      reviewScreenshots: screenshots.map((s) => s.id === id ? { ...s, caption } : s),
+    });
+  }
+
+  function removeScreenshot(id: string) {
+    onChange({ ...config, reviewScreenshots: screenshots.filter((s) => s.id !== id) });
   }
 
   // ── FAQ ──
@@ -471,6 +494,75 @@ export function EditorPanel({ config, onChange }: EditorPanelProps) {
                   </span>
                 </button>
               ))}
+            </div>
+          )}
+
+          {/* ── Review Screenshots ── */}
+          {activeSection === "screenshots" && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] text-gray-400">
+                  {screenshots.length}/12 screenshots uploaded
+                </p>
+              </div>
+
+              {screenshots.length === 0 ? (
+                <div className="border border-dashed border-gray-200 p-8 text-center">
+                  <p className="text-[12px] text-gray-400 mb-1">No screenshots yet</p>
+                  <p className="text-[10px] text-gray-300">Upload customer review screenshots below</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {screenshots.map((shot) => (
+                    <div key={shot.id} className="border border-gray-100 p-3 space-y-2">
+                      <div className="flex gap-3 items-start">
+                        <div className="w-16 shrink-0">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={shot.imageUrl}
+                            alt=""
+                            className="w-full aspect-[9/16] object-cover border border-gray-100"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0 space-y-2">
+                          <div>
+                            <label className="block text-[9px] uppercase tracking-wide text-gray-400 mb-1">Caption (optional)</label>
+                            <input
+                              type="text"
+                              value={shot.caption ?? ""}
+                              onChange={(e) => updateScreenshotCaption(shot.id, e.target.value)}
+                              placeholder="e.g. Verified purchase — March 2026"
+                              className="w-full border border-gray-200 px-2 py-1.5 text-[11px] outline-none focus:border-black transition-colors"
+                            />
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => removeScreenshot(shot.id)}
+                          className="text-gray-300 hover:text-red-500 transition-colors shrink-0 mt-0.5"
+                          title="Remove"
+                        >
+                          <X className="w-3.5 h-3.5" strokeWidth={1.5} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {screenshots.length < 12 && (
+                <div className="pt-2">
+                  <p className="text-[10px] uppercase tracking-wide text-gray-400 mb-2">Add Screenshot</p>
+                  <ImageUploadField
+                    key={screenshotUploaderKey}
+                    label=""
+                    value=""
+                    onChange={addScreenshot}
+                    aspect="aspect-[9/16]"
+                    bucket="product-images"
+                    pathPrefix="landing-page/review-screenshots"
+                  />
+                </div>
+              )}
             </div>
           )}
 
