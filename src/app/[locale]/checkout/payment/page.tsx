@@ -32,6 +32,7 @@ export default function PaymentPage() {
   const searchParams = useSearchParams();
   const amount = Number(searchParams.get("amount") ?? 0);
   const description = searchParams.get("description") ?? "Heir Order";
+  const orderId = searchParams.get("orderId") ?? "";
 
   const [state, setState] = useState<InvoiceState>({ phase: "creating" });
   const [tab, setTab] = useState<PaymentTab>("qpay");
@@ -54,7 +55,7 @@ export default function PaymentPage() {
         const res = await fetch("/api/byl/create-invoice", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ amount, description }),
+          body: JSON.stringify({ amount, description, orderId }),
         });
 
         if (!res.ok) {
@@ -88,7 +89,8 @@ export default function PaymentPage() {
         if (data.paid) {
           clearInterval(pollRef.current!);
           setState({ phase: "paid" });
-          router.push(`/${locale}/checkout/confirmation`);
+          const orderRef = orderId ? `?order=${orderId.slice(0, 8).toUpperCase()}&method=byl` : "?method=byl";
+          router.push(`/${locale}/checkout/confirmation${orderRef}`);
         }
       } catch {
         // Keep polling on transient errors

@@ -70,7 +70,7 @@ export function CheckoutForm({ bankDetails, locale }: CheckoutFormProps) {
     }
 
     clearCart();
-    router.push(`/${locale}/checkout/confirmation?order=${result.orderId?.slice(0, 8).toUpperCase()}`);
+    router.push(`/${locale}/checkout/payment?amount=${subtotal}&orderId=${result.orderId}`);
   }
 
   if (items.length === 0) {
@@ -113,12 +113,6 @@ export function CheckoutForm({ bankDetails, locale }: CheckoutFormProps) {
               <h2 className="text-[13px] font-medium">
                 {isMn ? "Холбоо барих" : "Contact"}
               </h2>
-              <Link
-                href={`/${locale}/login?next=/${locale}/checkout`}
-                className="text-[12px] text-gray-500 hover:text-black underline underline-offset-2"
-              >
-                {isMn ? "Нэвтрэх" : "Sign in"}
-              </Link>
             </div>
             <label htmlFor="phone" className="sr-only">
               {isMn ? "Утасны дугаар" : "Phone number"}

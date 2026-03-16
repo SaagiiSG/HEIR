@@ -3,7 +3,7 @@ import Link from "next/link";
 
 interface ConfirmationPageProps {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ order?: string }>;
+  searchParams: Promise<{ order?: string; method?: string }>;
 }
 
 export default async function ConfirmationPage({
@@ -11,7 +11,7 @@ export default async function ConfirmationPage({
   searchParams,
 }: ConfirmationPageProps) {
   const { locale } = await params;
-  const { order } = await searchParams;
+  const { order, method } = await searchParams;
   const t = await getTranslations({ locale, namespace: "checkout" });
 
   return (
@@ -32,16 +32,18 @@ export default async function ConfirmationPage({
         </p>
       )}
 
-      <div className="border border-black px-5 py-4 mb-8 text-left">
-        <p className="text-[11px] uppercase tracking-wide font-medium mb-2">
-          {locale === "mn" ? "ЧУХАЛ МЭДЭЭЛЭЛ" : "IMPORTANT"}
-        </p>
-        <p className="text-[12px] leading-relaxed">
-          {locale === "mn"
-            ? "ТӨЛБӨР ШИЛЖҮҮЛСНИЙ ДАРАА @heir.rchive ГЭСЭН ИНСТАГРАМ ХАЯГРУУ ГҮЙЛГЭЭНИЙ SCREENSHOT ИЛГЭЭЖ ЗАХИАЛГА БАТАЛГААЖСАН ЭСЭХИЙГ ШАЛГАНА УУ!"
-            : "Please send your payment screenshot to @heir.rchive on Instagram to confirm your order."}
-        </p>
-      </div>
+      {method !== "byl" && (
+        <div className="border border-black px-5 py-4 mb-8 text-left">
+          <p className="text-[11px] uppercase tracking-wide font-medium mb-2">
+            {locale === "mn" ? "ЧУХАЛ МЭДЭЭЛЭЛ" : "IMPORTANT"}
+          </p>
+          <p className="text-[12px] leading-relaxed">
+            {locale === "mn"
+              ? "ТӨЛБӨР ШИЛЖҮҮЛСНИЙ ДАРАА @heir.rchive ГЭСЭН ИНСТАГРАМ ХАЯГРУУ ГҮЙЛГЭЭНИЙ SCREENSHOT ИЛГЭЭЖ ЗАХИАЛГА БАТАЛГААЖСАН ЭСЭХИЙГ ШАЛГАНА УУ!"
+              : "Please send your payment screenshot to @heir.rchive on Instagram to confirm your order."}
+          </p>
+        </div>
+      )}
 
       <div className="flex flex-col gap-3 items-center">
         <Link

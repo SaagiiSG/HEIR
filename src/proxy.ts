@@ -6,7 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 const intlMiddleware = createMiddleware(routing);
 
-const AUTH_REQUIRED = ["/checkout", "/account"];
+const AUTH_REQUIRED = ["/account"];
 const ADMIN_REQUIRED = ["/admin"];
 
 // Only the lockdown page itself is accessible during lockdown

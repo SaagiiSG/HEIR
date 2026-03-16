@@ -1,9 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createBylInvoice } from "@/lib/byl";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { amount, description } = body;
+  const { amount, description, orderId } = body;
 
   if (!amount || typeof amount !== "number") {
     return NextResponse.json({ error: "amount is required" }, { status: 400 });
@@ -11,6 +12,18 @@ export async function POST(request: NextRequest) {
 
   try {
     const invoice = await createBylInvoice({ amount, description });
+
+    // If orderId provided, persist the payment row so the webhook can link back
+    if (orderId) {
+      const supabase = createAdminClient();
+      await supabase.from("payments").insert({
+        order_id: orderId,
+        provider: "byl",
+        provider_invoice_id: String(invoice.id),
+        amount,
+        status: "pending",
+      });
+    }
 
     return NextResponse.json({
       invoice_id: invoice.id,
