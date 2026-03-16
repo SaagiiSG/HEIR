@@ -27,7 +27,7 @@ interface CartContextValue {
   items: CartItem[];
   itemCount: number;
   subtotal: number;
-  addItem: (item: Omit<CartItem, "id">) => void;
+  addItem: (item: Omit<CartItem, "id">, silent?: boolean) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
@@ -61,7 +61,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
   }, [items]);
 
-  const addItem = useCallback((newItem: Omit<CartItem, "id">) => {
+  const addItem = useCallback((newItem: Omit<CartItem, "id">, silent = false) => {
     setItems((prev) => {
       const existingIndex = prev.findIndex(
         (i) => i.variantId === newItem.variantId
@@ -77,7 +77,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const id = `${newItem.variantId}-${Date.now()}`;
       return [...prev, { ...newItem, id }];
     });
-    setIsOpen(true);
+    if (!silent) setIsOpen(true);
   }, []);
 
   const removeItem = useCallback((id: string) => {

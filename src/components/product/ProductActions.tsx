@@ -66,7 +66,7 @@ export function ProductActions({ product, variants, locale, isMn }: ProductActio
       size: selectedVariant.size,
       color: selectedVariant.color,
       slug: product.slug,
-    });
+    }, true);
     router.push(`/${locale}/checkout`);
   }
 
