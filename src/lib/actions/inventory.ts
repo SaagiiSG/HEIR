@@ -29,3 +29,19 @@ export async function updateStock(variantId: string, qty: number): Promise<{ err
     return { error: e instanceof Error ? e.message : "Failed to update stock" };
   }
 }
+
+export async function updateVariantStock(
+  updates: { id: string; stock: number }[]
+): Promise<void> {
+  const supabase = createAdminClient();
+  await Promise.all(
+    updates.map(({ id, stock }) =>
+      supabase
+        .from("product_variants")
+        .update({ stock })
+        .eq("id", id)
+    )
+  );
+  revalidatePath("/[locale]/admin/inventory", "page");
+  revalidatePath("/[locale]/admin", "page");
+}

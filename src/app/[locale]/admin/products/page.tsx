@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { RestockDialog } from "@/components/admin/RestockDialog";
 
 interface ProductsPageProps {
   params: Promise<{ locale: string }>;
@@ -95,13 +96,18 @@ export default async function AdminProductsPage({ params }: ProductsPageProps) {
                   <td className="py-3 pr-4 text-center">
                     <span className={`w-2 h-2 rounded-full inline-block ${p.is_active ? "bg-green-500" : "bg-gray-300"}`} />
                   </td>
-                  <td className="py-3 pr-4">
+                  <td className="py-3 pr-4 flex items-center">
                     <Link
                       href={`/${locale}/admin/products/${p.id}`}
                       className="text-[11px] hover:underline"
                     >
                       Edit
                     </Link>
+                    <RestockDialog
+                      productId={p.id}
+                      productName={locale === "mn" ? p.name_mn : p.name_en}
+                      locale={locale}
+                    />
                   </td>
                 </tr>
               ))}
