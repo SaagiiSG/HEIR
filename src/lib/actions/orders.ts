@@ -133,6 +133,20 @@ export async function createOrder(
   }
 }
 
+export async function markOrderPaid(orderId: string): Promise<void> {
+  const supabase = createAdminClient();
+  await supabase
+    .from("orders")
+    .update({ status: "paid" })
+    .eq("id", orderId)
+    .eq("status", "pending"); // no-op if webhook already updated it
+  await supabase
+    .from("payments")
+    .update({ status: "paid", paid_at: new Date().toISOString() })
+    .eq("order_id", orderId)
+    .eq("status", "pending");
+}
+
 export async function deleteExpiredOrder(orderId: string): Promise<void> {
   const supabase = createAdminClient();
   // Only deletes if still pending — guards against race with payment webhook

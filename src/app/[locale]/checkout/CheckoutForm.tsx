@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { checkoutSchema, type CheckoutFormData } from "@/lib/validators";
 import { useCart } from "@/lib/cart-context";
 import { formatPrice } from "@/lib/utils";
-import { createOrder, deleteExpiredOrder } from "@/lib/actions/orders";
+import { createOrder, deleteExpiredOrder, markOrderPaid } from "@/lib/actions/orders";
 import { Spinner } from "@/components/ui/Spinner";
 import { QRCodeSVG } from "qrcode.react";
 import Image from "next/image";
@@ -102,6 +102,7 @@ export function CheckoutForm({ locale }: CheckoutFormProps) {
         const data = await res.json();
         if (data.paid) {
           clearInterval(pollRef.current!);
+          await markOrderPaid(orderId);
           router.push(`/${locale}/checkout/confirmation?order=${orderId.slice(0, 8).toUpperCase()}`);
         }
       } catch {
@@ -200,32 +201,12 @@ export function CheckoutForm({ locale }: CheckoutFormProps) {
         <div className="px-6 py-10 md:px-10 md:py-14 border-r border-gray-100">
           {inPayment ? (
             <div className="flex flex-col items-center justify-center h-full min-h-[320px] gap-4 text-center">
-              {phase.step === "creating-invoice" ? (
-                <>
-                  <Spinner size="sm" />
-                  <p className="text-[13px] text-gray-500">
-                    {isMn ? "Нэхэмжлэх үүсгэж байна…" : "Creating invoice…"}
-                  </p>
-                </>
-              ) : (
-                <>
-                  <div className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center mb-2">
-                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z" />
-                    </svg>
-                  </div>
-                  <p className="text-[15px] font-normal">
-                    {isMn ? "QR кодоо скан хийж төлнө үү" : "Scan the QR code to pay"}
-                  </p>
-                  <p className="text-[12px] text-gray-400">
-                    {isMn ? "Банкны апп нээгээд баруун талын QR кодыг скан хийнэ үү" : "Open your banking app and scan the QR on the right"}
-                  </p>
-                  <div className="flex items-center gap-2 text-[12px] text-gray-400 mt-2">
-                    <Spinner size="sm" />
-                    <span>{isMn ? "Төлбөр хүлээж байна…" : "Waiting for payment…"}</span>
-                  </div>
-                </>
-              )}
+              <Spinner size="sm" />
+              <p className="text-[13px] text-gray-500">
+                {phase.step === "creating-invoice"
+                  ? (isMn ? "Нэхэмжлэх үүсгэж байна…" : "Creating invoice…")
+                  : (isMn ? "Төлбөр хүлээж байна…" : "Waiting for payment…")}
+              </p>
             </div>
           ) : (
             <form onSubmit={handleSubmit(onSubmit)}>
@@ -332,7 +313,6 @@ export function CheckoutForm({ locale }: CheckoutFormProps) {
         {/* RIGHT: Order summary or QR */}
         <div className="px-6 py-10 md:px-8 md:py-14 bg-gray-50/60">
           {inPayment && phase.step === "awaiting-payment" ? (
-            /* QR payment panel */
             <div className="flex flex-col items-center gap-5">
               <p className="text-[12px] text-gray-500 self-start">
                 {isMn ? "Нийт дүн" : "Total"}{" "}
@@ -341,23 +321,33 @@ export function CheckoutForm({ locale }: CheckoutFormProps) {
                 </span>
               </p>
 
-              {/* QR — desktop */}
-              <div className="hidden md:flex flex-col items-center border border-gray-200 rounded bg-white p-6 w-full">
-                <QRCodeSVG value={phase.url} size={192} />
-                <p className="text-[11px] text-gray-400 mt-4 text-center">
-                  {isMn ? "Банкны апп-аараа скан хийн төлнө үү" : "Scan with your banking app"}
-                </p>
+              {/* Desktop: QR code */}
+              <div className="hidden md:flex flex-col items-center border border-gray-200 rounded bg-white p-6 w-full gap-4">
+                <QRCodeSVG value={phase.url} size={200} />
+                <div className="text-center space-y-1">
+                  <p className="text-[12px] font-medium">
+                    {isMn ? "Утасны камераар скан хийнэ үү" : "Scan with your phone camera"}
+                  </p>
+                  <p className="text-[11px] text-gray-400">
+                    {isMn ? "Камер апп ашиглана уу" : "Use your camera app, not the banking app scanner"}
+                  </p>
+                </div>
               </div>
 
-              {/* Bank buttons — mobile */}
-              <div className="md:hidden w-full">
-                <p className="text-[12px] text-gray-400 mb-3 text-center">
-                  {isMn ? "Банкаа сонгон төлнө үү" : "Select your bank"}
+              {/* Mobile: bank buttons */}
+              <div className="md:hidden w-full space-y-3">
+                <p className="text-[12px] text-gray-500 text-center">
+                  {isMn ? "Банкаа сонгон төлнө үү" : "Select your bank to pay"}
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                   {BANKS.map((name) => (
-                    <a key={name} href={phase.url} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center justify-center border border-gray-200 rounded py-3 px-2 text-[12px] bg-white hover:border-black transition-colors">
+                    <a
+                      key={name}
+                      href={phase.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center border border-gray-200 rounded py-3 px-2 text-[12px] bg-white hover:border-black transition-colors"
+                    >
                       {name}
                     </a>
                   ))}
