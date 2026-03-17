@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { checkoutSchema, type CheckoutFormData } from "@/lib/validators";
 import { useCart } from "@/lib/cart-context";
 import { formatPrice } from "@/lib/utils";
-import { createOrder } from "@/lib/actions/orders";
+import { createOrder, deleteExpiredOrder } from "@/lib/actions/orders";
 import { Spinner } from "@/components/ui/Spinner";
 import { QRCodeSVG } from "qrcode.react";
 import Image from "next/image";
@@ -21,6 +21,7 @@ type PaymentPhase =
   | { step: "form" }
   | { step: "creating-invoice"; orderId: string; amount: number }
   | { step: "awaiting-payment"; orderId: string; invoiceId: string; url: string; amount: number }
+  | { step: "expired" }
   | { step: "error"; message: string };
 
 const BANKS = [
@@ -73,6 +74,19 @@ export function CheckoutForm({ locale }: CheckoutFormProps) {
     }
 
     createInvoice();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase.step]);
+
+  // 5-minute expiry timer — hard-deletes the pending order and shows expired UI
+  useEffect(() => {
+    if (phase.step !== "awaiting-payment") return;
+    const { orderId } = phase;
+    const timer = setTimeout(async () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+      await deleteExpiredOrder(orderId);
+      setPhase({ step: "expired" });
+    }, 5 * 60 * 1000);
+    return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase.step]);
 
@@ -133,6 +147,24 @@ export function CheckoutForm({ locale }: CheckoutFormProps) {
   }
 
   const inPayment = phase.step === "creating-invoice" || phase.step === "awaiting-payment";
+
+  if (phase.step === "expired") {
+    return (
+      <main id="main-content" className="px-5 py-20 max-w-[500px] mx-auto text-center">
+        <p className="text-[14px] text-gray-800 mb-2">
+          {isMn ? "Төлбөрийн хугацаа дууссан" : "Payment expired"}
+        </p>
+        <p className="text-[12px] text-gray-400 mb-6">
+          {isMn
+            ? "5 минутын хугацаа дууссан тул захиалга цуцлагдлаа."
+            : "The 5-minute payment window has elapsed and your order was cancelled."}
+        </p>
+        <Link href={`/${locale}/store`} className="text-[12px] underline underline-offset-2">
+          {isMn ? "Дэлгүүр рүү буцах" : "Back to store"}
+        </Link>
+      </main>
+    );
+  }
 
   if (items.length === 0 && !inPayment) {
     return (

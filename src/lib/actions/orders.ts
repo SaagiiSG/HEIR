@@ -133,6 +133,16 @@ export async function createOrder(
   }
 }
 
+export async function deleteExpiredOrder(orderId: string): Promise<void> {
+  const supabase = createAdminClient();
+  // Only deletes if still pending — guards against race with payment webhook
+  await supabase
+    .from("orders")
+    .delete()
+    .eq("id", orderId)
+    .eq("status", "pending");
+}
+
 export type KanbanStatus = "pending" | "paid" | "processing" | "shipped" | "delivered";
 
 export async function updateOrderStatus(

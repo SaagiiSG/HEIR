@@ -22,9 +22,10 @@ export default async function AdminDashboard({ params }: AdminDashboardProps) {
   let revenueData: { label: string; value: number }[] = [];
 
   // Build last-7-days skeleton
+  // Order matches getDay(): 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
   const dayLabels = isMn
-    ? ["Да", "Мя", "Лх", "Пү", "Ба", "Бя", "Ня"]
-    : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    ? ["Ня", "Да", "Мя", "Лх", "Пү", "Ба", "Бя"]
+    : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const today = new Date();
   const sevenDaysMap: Record<string, number> = {};
   const sevenDayLabels: { dateStr: string; label: string }[] = [];
@@ -57,13 +58,14 @@ export default async function AdminDashboard({ params }: AdminDashboardProps) {
       supabase
         .from("orders")
         .select("id", { count: "exact", head: true })
+        .eq("status", "paid")
         .gte("created_at", todayStart.toISOString()),
 
       supabase
         .from("orders")
         .select("total")
-        .gte("created_at", monthStart.toISOString())
-        .not("status", "in", "(cancelled,refunded)"),
+        .eq("status", "paid")
+        .gte("created_at", monthStart.toISOString()),
 
       supabase
         .from("profiles")
@@ -78,14 +80,15 @@ export default async function AdminDashboard({ params }: AdminDashboardProps) {
       supabase
         .from("orders")
         .select("id, created_at, status, total, shipping_first_name, shipping_last_name")
+        .eq("status", "paid")
         .order("created_at", { ascending: false })
         .limit(5),
 
       supabase
         .from("orders")
         .select("created_at, total")
-        .gte("created_at", sevenDaysAgo.toISOString())
-        .not("status", "in", "(cancelled,refunded)"),
+        .eq("status", "paid")
+        .gte("created_at", sevenDaysAgo.toISOString()),
     ]);
 
     ordersToday = ordersTodayRes.count ?? 0;

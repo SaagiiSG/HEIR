@@ -23,6 +23,11 @@ export async function POST(request: NextRequest) {
         amount,
         status: "pending",
       });
+      // Mark order with a 5-minute expiry — admin panel filters these out once elapsed
+      await supabase
+        .from("orders")
+        .update({ expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString() })
+        .eq("id", orderId);
     }
 
     return NextResponse.json({

@@ -25,6 +25,7 @@ export default async function AdminOrdersPage({ params, searchParams }: AdminOrd
     let query = supabase
       .from("orders")
       .select("id, created_at, status, total, shipping_first_name, shipping_last_name")
+      .or("expires_at.is.null,expires_at.gt.now(),status.neq.pending")
       .order("created_at", { ascending: false });
 
     if (isKanban) {
