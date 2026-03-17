@@ -210,15 +210,11 @@ export default async function AdminAnalyticsPage({ params }: AdminAnalyticsPageP
       </div>
 
       {/* Revenue charts */}
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         <RevenueChart
-          data={last7DaysData}
-          title={isMn ? "7 хоногийн орлого" : "Revenue — Last 7 Days"}
-          locale={locale}
-        />
-        <RevenueChart
-          data={last4WeeksData}
-          title={isMn ? "30 хоногийн орлого" : "Revenue — Last 30 Days"}
+          daily={[]}
+          weekly={last7DaysData}
+          monthly={last4WeeksData}
           locale={locale}
         />
       </div>
