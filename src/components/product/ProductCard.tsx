@@ -64,29 +64,6 @@ export function ProductCard({ product, locale }: ProductCardProps) {
     setActiveIdx(0);
   }, []);
 
-  // Mobile: IntersectionObserver — start when 60% of card is visible
-  useEffect(() => {
-    const el = cardRef.current;
-    if (!el || !isTouchOnly()) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          startCycling();
-        } else {
-          stopCycling();
-        }
-      },
-      { threshold: 0.6 }
-    );
-
-    observer.observe(el);
-    return () => {
-      observer.disconnect();
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [startCycling, stopCycling]);
-
   // Cleanup on unmount
   useEffect(() => {
     return () => {

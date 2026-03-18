@@ -13,6 +13,8 @@ const CATEGORIES = [
   { value: "pants", label_mn: "ӨМД", label_en: "PANTS" },
   { value: "shirts", label_mn: "ЦАМЦ", label_en: "SHIRT" },
   { value: "coats", label_mn: "ПАЛЬТО", label_en: "COAT" },
+  { value: "sweater", label_mn: "СВАЙТЕР", label_en: "SWEATER" },
+  { value: "shoes", label_mn: "ГУТАЛ", label_en: "SHOES" },
   { value: "accessories", label_mn: "ДАГАЛДАХ", label_en: "ACCESS." },
 ];
 

@@ -113,7 +113,7 @@ export default function AccountClient({ locale, user, profile, orders, carouselI
       <div className="flex h-[calc(100vh-50px)]">
 
         {/* ── Left column ── */}
-        <div className="w-full md:w-[42%] flex flex-col justify-between px-8 md:px-16 py-14">
+        <div className={`w-full md:w-[42%] flex flex-col justify-between px-8 md:px-16 py-14 relative bg-white ${drawer ? "z-0" : "z-[50]"}`}>
 
           {/* Identity */}
           <div>
@@ -193,7 +193,7 @@ export default function AccountClient({ locale, user, profile, orders, carouselI
 
       {/* ── Backdrop ── */}
       <div
-        className={`fixed inset-0 bg-black/20 backdrop-blur-[2px] z-30 transition-opacity duration-300 ${
+        className={`fixed inset-0 bg-black/20 backdrop-blur-[2px] z-[48] transition-opacity duration-300 ${
           drawer ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
         onClick={() => setDrawer(null)}
@@ -201,7 +201,7 @@ export default function AccountClient({ locale, user, profile, orders, carouselI
 
       {/* ── Drawer panel — slides out from right edge of left column ── */}
       <div
-        className={`fixed top-0 left-[42%] h-full w-[380px] bg-white z-40 flex flex-col shadow-2xl transition-transform duration-300 ease-out ${
+        className={`fixed top-0 left-[42%] h-full w-[380px] bg-white z-[49] flex flex-col shadow-2xl transition-transform duration-300 ease-out ${
           drawer ? "translate-x-0" : "-translate-x-full"
         }`}
       >
