@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { StatusBadge } from "@/components/ui/Badge";
 import { formatPrice } from "@/lib/utils";
@@ -11,6 +12,8 @@ export interface OrderRow {
   total: number;
   customer_name?: string;
   item_count?: number;
+  phone?: string;
+  address?: string; // pre-formatted full address
 }
 
 interface OrderTableProps {
@@ -27,6 +30,35 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: "Цуцлагдсан",
   refunded: "Буцаасан",
 };
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  function handleCopy(e: React.MouseEvent) {
+    e.preventDefault();
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  }
+  return (
+    <button
+      onClick={handleCopy}
+      title="Copy address"
+      className="ml-1.5 shrink-0 text-gray-300 hover:text-black transition-colors"
+    >
+      {copied ? (
+        <svg className="w-3.5 h-3.5 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      ) : (
+        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+        </svg>
+      )}
+    </button>
+  );
+}
 
 export function OrderTable({ orders, locale = "mn" }: OrderTableProps) {
   if (orders.length === 0) {
@@ -52,6 +84,9 @@ export function OrderTable({ orders, locale = "mn" }: OrderTableProps) {
               {locale === "mn" ? "Хэрэглэгч" : "Customer"}
             </th>
             <th className="text-left py-3 font-normal text-[11px] uppercase tracking-wide text-gray-500 pr-4">
+              {locale === "mn" ? "Хаяг" : "Address"}
+            </th>
+            <th className="text-left py-3 font-normal text-[11px] uppercase tracking-wide text-gray-500 pr-4">
               {locale === "mn" ? "Төлөв" : "Status"}
             </th>
             <th className="text-right py-3 font-normal text-[11px] uppercase tracking-wide text-gray-500">
@@ -74,7 +109,20 @@ export function OrderTable({ orders, locale = "mn" }: OrderTableProps) {
                 {new Date(order.created_at).toLocaleDateString(locale === "mn" ? "mn-MN" : "en-US")}
               </td>
               <td className="py-3 pr-4">
-                {order.customer_name ?? "—"}
+                <div>{order.customer_name ?? "—"}</div>
+                {order.phone && (
+                  <div className="text-[10px] text-gray-400 mt-0.5">{order.phone}</div>
+                )}
+              </td>
+              <td className="py-3 pr-4 max-w-[220px]">
+                {order.address ? (
+                  <div className="flex items-start gap-1">
+                    <span className="text-[11px] leading-snug text-gray-700 break-words">{order.address}</span>
+                    <CopyButton text={order.address} />
+                  </div>
+                ) : (
+                  <span className="text-gray-300">—</span>
+                )}
               </td>
               <td className="py-3 pr-4">
                 <StatusBadge

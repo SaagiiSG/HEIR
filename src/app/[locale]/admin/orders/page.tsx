@@ -24,7 +24,7 @@ export default async function AdminOrdersPage({ params, searchParams }: AdminOrd
 
     let query = supabase
       .from("orders")
-      .select("id, created_at, status, total, shipping_first_name, shipping_last_name")
+      .select("id, created_at, status, total, shipping_first_name, shipping_last_name, shipping_phone, shipping_address1, shipping_address2, shipping_district, shipping_city, shipping_postal_code")
       .or("expires_at.is.null,expires_at.gt.now(),status.neq.pending")
       .order("created_at", { ascending: false });
 
@@ -39,13 +39,24 @@ export default async function AdminOrdersPage({ params, searchParams }: AdminOrd
 
     const { data } = await query;
 
-    orders = (data ?? []).map((o) => ({
-      id: o.id,
-      created_at: o.created_at,
-      status: o.status,
-      total: o.total,
-      customer_name: [o.shipping_first_name, o.shipping_last_name].filter(Boolean).join(" ") || undefined,
-    }));
+    orders = (data ?? []).map((o) => {
+      const addressParts = [
+        o.shipping_address1,
+        o.shipping_address2,
+        o.shipping_district,
+        o.shipping_city,
+        o.shipping_postal_code,
+      ].filter(Boolean);
+      return {
+        id: o.id,
+        created_at: o.created_at,
+        status: o.status,
+        total: o.total,
+        customer_name: [o.shipping_first_name, o.shipping_last_name].filter(Boolean).join(" ") || undefined,
+        phone: o.shipping_phone ?? undefined,
+        address: addressParts.length > 0 ? addressParts.join(", ") : undefined,
+      };
+    });
   } catch {
     // Service role key not configured
   }
