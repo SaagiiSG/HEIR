@@ -52,7 +52,7 @@ export function ProductFilters({ locale }: ProductFiltersProps) {
           <button
             key={cat.value}
             onClick={() => update({ category: cat.value })}
-            className={`text-[10px] tracking-[0.25em] transition-colors ${
+            className={`text-[12px] md:text-[10px] tracking-[0.25em] transition-colors ${
               currentCategory === cat.value
                 ? "text-black"
                 : "text-gray-400 hover:text-black"
@@ -63,11 +63,11 @@ export function ProductFilters({ locale }: ProductFiltersProps) {
         ))}
       </div>
 
-      {/* Divider */}
+      {/* Divider — desktop only */}
       <div className="hidden md:block w-px h-4 bg-gray-200" />
 
-      {/* Size pills */}
-      <div className="flex flex-wrap gap-2">
+      {/* Size pills — desktop only */}
+      <div className="hidden md:flex flex-wrap gap-2">
         {SIZES.map((s) => (
           <button
             key={s}
