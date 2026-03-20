@@ -15,16 +15,18 @@ export interface VariantDraft {
   stock: number;
 }
 
+const CLOTHING_SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
+const SHOE_SIZES = ["38", "39", "40", "41", "42", "43", "44", "45", "46"];
+
 interface VariantManagerProps {
   variants: VariantDraft[];
   onChange: (variants: VariantDraft[]) => void;
+  sizeOptions?: string[];
 }
 
-const SIZE_OPTIONS = ["XS", "S", "M", "L", "XL", "XXL"];
-
-function emptyVariant(): VariantDraft {
+function emptyVariant(defaultSize = "M"): VariantDraft {
   return {
-    size: "M",
+    size: defaultSize,
     color_name_mn: "",
     color_name_en: "",
     color_hex: "#000000",
@@ -33,9 +35,10 @@ function emptyVariant(): VariantDraft {
   };
 }
 
-export function VariantManager({ variants, onChange }: VariantManagerProps) {
+export function VariantManager({ variants, onChange, sizeOptions }: VariantManagerProps) {
+  const SIZE_OPTIONS = sizeOptions ?? CLOTHING_SIZES;
   function addVariant() {
-    onChange([...variants, emptyVariant()]);
+    onChange([...variants, emptyVariant(SIZE_OPTIONS[0])]);
   }
 
   function removeVariant(index: number) {

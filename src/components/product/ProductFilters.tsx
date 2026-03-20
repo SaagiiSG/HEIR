@@ -6,7 +6,8 @@ interface ProductFiltersProps {
   locale: string;
 }
 
-const SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
+const CLOTHING_SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
+const SHOE_SIZES = ["38", "39", "40", "41", "42", "43", "44", "45", "46"];
 const CATEGORIES = [
   { value: "", label_mn: "БҮГД", label_en: "ALL" },
   { value: "jackets", label_mn: "ЖАКЕТ", label_en: "JACKET" },
@@ -26,6 +27,7 @@ export function ProductFilters({ locale }: ProductFiltersProps) {
 
   const currentCategory = searchParams.get("category") ?? "";
   const currentSize = searchParams.get("size") ?? "";
+  const SIZES = currentCategory === "shoes" ? SHOE_SIZES : CLOTHING_SIZES;
 
   function update(params: Record<string, string>) {
     const next = new URLSearchParams(searchParams.toString());

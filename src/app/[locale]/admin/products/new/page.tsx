@@ -17,7 +17,7 @@ export default function NewProductPage() {
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.from("categories").select("id, name_mn, name_en").order("name_en").then(({ data }) => {
+    supabase.from("categories").select("id, slug, name_mn, name_en").order("name_en").then(({ data }) => {
       if (data) setCategories(data);
     });
   }, []);

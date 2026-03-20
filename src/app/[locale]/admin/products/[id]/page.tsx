@@ -14,7 +14,7 @@ export default function EditProductPage() {
   const locale = (params.locale as string) ?? "mn";
   const productId = params.id as string;
 
-  const [categories, setCategories] = useState<{ id: string; name_mn: string; name_en: string }[]>([]);
+  const [categories, setCategories] = useState<{ id: string; slug: string; name_mn: string; name_en: string }[]>([]);
   const [initialData, setInitialData] = useState<Parameters<typeof ProductForm>[0]["initialData"]>();
   const [loading, setLoading] = useState(true);
 
@@ -22,7 +22,7 @@ export default function EditProductPage() {
     const supabase = createClient();
 
     Promise.all([
-      supabase.from("categories").select("id, name_mn, name_en").order("name_en"),
+      supabase.from("categories").select("id, slug, name_mn, name_en").order("name_en"),
       supabase
         .from("products")
         .select("*, product_images(*), product_variants(*)")

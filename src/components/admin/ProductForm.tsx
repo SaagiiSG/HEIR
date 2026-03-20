@@ -25,7 +25,7 @@ interface ProductFormProps {
     variants: VariantDraft[];
     images: UploadedImage[];
   }>;
-  categories: { id: string; name_mn: string; name_en: string }[];
+  categories: { id: string; slug: string; name_mn: string; name_en: string }[];
   onSubmit: (data: ProductFormData & {
     variants: VariantDraft[];
     images: UploadedImage[];
@@ -40,6 +40,7 @@ export function ProductForm({ initialData, categories, onSubmit, locale = "mn" }
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<ProductFormData>({
     defaultValues: {
@@ -63,6 +64,12 @@ export function ProductForm({ initialData, categories, onSubmit, locale = "mn" }
     value: c.id,
     label: locale === "mn" ? c.name_mn : c.name_en,
   }));
+
+  const selectedCategoryId = watch("category_id");
+  const selectedCategorySlug = categories.find((c) => c.id === selectedCategoryId)?.slug ?? "";
+  const variantSizeOptions = selectedCategorySlug === "shoes"
+    ? ["38", "39", "40", "41", "42", "43", "44", "45", "46"]
+    : ["XS", "S", "M", "L", "XL", "XXL"];
 
   return (
     <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-8">
@@ -150,7 +157,7 @@ export function ProductForm({ initialData, categories, onSubmit, locale = "mn" }
 
       {/* Variants */}
       <div className="border-t border-gray-100 pt-6">
-        <VariantManager variants={variants} onChange={setVariants} />
+        <VariantManager variants={variants} onChange={setVariants} sizeOptions={variantSizeOptions} />
       </div>
 
       <div className="border-t border-gray-100 pt-6 flex gap-3">
