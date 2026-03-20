@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { VariantManager, type VariantDraft } from "./VariantManager";
+import { ShoeVariantManager } from "./ShoeVariantManager";
 import { ImageUploader, type UploadedImage } from "./ImageUploader";
 
 interface ProductFormData {
@@ -67,9 +68,7 @@ export function ProductForm({ initialData, categories, onSubmit, locale = "mn" }
 
   const selectedCategoryId = watch("category_id");
   const selectedCategorySlug = categories.find((c) => c.id === selectedCategoryId)?.slug ?? "";
-  const variantSizeOptions = selectedCategorySlug === "shoes"
-    ? ["38", "39", "40", "41", "42", "43", "44", "45", "46"]
-    : ["XS", "S", "M", "L", "XL", "XXL"];
+  const isShoes = selectedCategorySlug === "shoes";
 
   return (
     <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-8">
@@ -157,7 +156,11 @@ export function ProductForm({ initialData, categories, onSubmit, locale = "mn" }
 
       {/* Variants */}
       <div className="border-t border-gray-100 pt-6">
-        <VariantManager variants={variants} onChange={setVariants} sizeOptions={variantSizeOptions} />
+        {isShoes ? (
+          <ShoeVariantManager initialVariants={variants} onChange={setVariants} />
+        ) : (
+          <VariantManager variants={variants} onChange={setVariants} />
+        )}
       </div>
 
       <div className="border-t border-gray-100 pt-6 flex gap-3">
