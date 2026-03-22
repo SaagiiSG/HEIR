@@ -27,9 +27,10 @@ interface ProductActionsProps {
   variants: ProductVariant[];
   locale: string;
   isMn: boolean;
+  onColorChange?: (hex: string) => void;
 }
 
-export function ProductActions({ product, variants, locale, isMn }: ProductActionsProps) {
+export function ProductActions({ product, variants, locale, isMn, onColorChange }: ProductActionsProps) {
   const { addItem } = useCart();
   const router = useRouter();
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
@@ -82,6 +83,7 @@ export function ProductActions({ product, variants, locale, isMn }: ProductActio
         }))}
         selectedVariantId={selectedVariantId}
         onSelect={setSelectedVariantId}
+        onColorChange={onColorChange}
       />
 
       <button

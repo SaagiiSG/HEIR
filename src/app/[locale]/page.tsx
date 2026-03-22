@@ -202,7 +202,7 @@ export default async function HomePage({ params }: HomePageProps) {
       <FadeIn>
       <section className="px-5 pt-8 pb-4 border-t border-gray-200">
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-5">
-          {config.collections.slice(0, 4).map((col, i) => (
+          {config.collections.slice(0, 4).filter((col) => col.visible !== false).map((col, i) => (
             <FadeIn key={col.label_en} delay={[0, 0.1, 0.18, 0.36][i % 4]}>
               <Link href={`/${locale}/collections/${col.slug}`} className="group block">
                 <div className="aspect-square bg-[#f5f5f5] mb-3 overflow-hidden relative">
@@ -222,7 +222,7 @@ export default async function HomePage({ params }: HomePageProps) {
       </section>
       <section className="px-5 pt-4 pb-8">
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-5">
-          {config.collections.slice(4, 8).map((col, i) => (
+          {config.collections.slice(4, 8).filter((col) => col.visible !== false).map((col, i) => (
             <FadeIn key={col.label_en} delay={[0, 0.1, 0.18, 0.36][i % 4]}>
               <Link href={`/${locale}/collections/${col.slug}`} className="group block">
                 <div className="aspect-square bg-[#f5f5f5] mb-3 overflow-hidden relative">

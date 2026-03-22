@@ -6,8 +6,6 @@ interface ProductFiltersProps {
   locale: string;
 }
 
-const CLOTHING_SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
-const SHOE_SIZES = ["38", "39", "40", "41", "42", "43", "44", "45", "46"];
 const CATEGORIES = [
   { value: "", label_mn: "БҮГД", label_en: "ALL" },
   { value: "jackets", label_mn: "ЖАКЕТ", label_en: "JACKET" },
@@ -26,8 +24,6 @@ export function ProductFilters({ locale }: ProductFiltersProps) {
   const searchParams = useSearchParams();
 
   const currentCategory = searchParams.get("category") ?? "";
-  const currentSize = searchParams.get("size") ?? "";
-  const SIZES = currentCategory === "shoes" ? SHOE_SIZES : CLOTHING_SIZES;
 
   function update(params: Record<string, string>) {
     const next = new URLSearchParams(searchParams.toString());
@@ -40,10 +36,6 @@ export function ProductFilters({ locale }: ProductFiltersProps) {
     }
     next.delete("page");
     router.push(`${pathname}?${next.toString()}`);
-  }
-
-  function toggleSize(size: string) {
-    update({ size: currentSize === size ? "" : size });
   }
 
   return (
@@ -61,27 +53,6 @@ export function ProductFilters({ locale }: ProductFiltersProps) {
             }`}
           >
             {isMn ? cat.label_mn : cat.label_en}
-          </button>
-        ))}
-      </div>
-
-      {/* Divider — desktop only */}
-      <div className="hidden md:block w-px h-4 bg-gray-200" />
-
-      {/* Size pills — desktop only */}
-      <div className="hidden md:flex flex-wrap gap-2">
-        {SIZES.map((s) => (
-          <button
-            key={s}
-            onClick={() => toggleSize(s)}
-            aria-pressed={currentSize === s}
-            className={`w-8 h-8 border text-[10px] tracking-wider transition-colors ${
-              currentSize === s
-                ? "border-black bg-black text-white"
-                : "border-gray-300 text-gray-500 hover:border-black hover:text-black"
-            }`}
-          >
-            {s}
           </button>
         ))}
       </div>

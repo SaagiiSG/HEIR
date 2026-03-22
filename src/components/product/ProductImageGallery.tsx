@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { ProductHeroImage } from "./ProductHeroImage";
 
 interface ProductImageGalleryProps {
@@ -11,6 +11,12 @@ interface ProductImageGalleryProps {
 export function ProductImageGallery({ images, alt }: ProductImageGalleryProps) {
   const [activeIdx, setActiveIdx] = useState(0);
   const trackRef = useRef<HTMLDivElement>(null);
+
+  // Reset to first image whenever the image set changes (e.g. color switch)
+  useEffect(() => {
+    setActiveIdx(0);
+    trackRef.current?.scrollTo({ left: 0, behavior: "instant" });
+  }, [images]);
 
   function handleScroll() {
     const el = trackRef.current;

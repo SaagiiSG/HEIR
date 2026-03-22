@@ -108,7 +108,7 @@ export function LandingPagePreview({ config }: LandingPagePreviewProps) {
       {/* ── Collections ── */}
       <section className="px-4 py-4 border-t border-gray-200">
         <div className="grid grid-cols-4 gap-3 mb-3">
-          {config.collections.slice(0, 4).map((col, i) => (
+          {config.collections.slice(0, 4).filter((col) => col.visible !== false).map((col, i) => (
             <div key={i}>
               <div className="aspect-square bg-[#f5f5f5] mb-2 overflow-hidden">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -119,7 +119,7 @@ export function LandingPagePreview({ config }: LandingPagePreviewProps) {
           ))}
         </div>
         <div className="grid grid-cols-4 gap-3">
-          {config.collections.slice(4, 8).map((col, i) => (
+          {config.collections.slice(4, 8).filter((col) => col.visible !== false).map((col, i) => (
             <div key={i}>
               <div className="aspect-square bg-[#f5f5f5] mb-2 overflow-hidden">
                 {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -14,12 +14,14 @@ interface VariantSelectorProps {
   variants: Variant[];
   selectedVariantId: string | null;
   onSelect: (variantId: string) => void;
+  onColorChange?: (hex: string) => void;
 }
 
 export function VariantSelector({
   variants,
   selectedVariantId,
   onSelect,
+  onColorChange,
 }: VariantSelectorProps) {
   const t = useTranslations("product");
 
@@ -47,7 +49,10 @@ export function VariantSelector({
     const match = variants.find(
       (v) => v.color === color && (!currentSize || v.size === currentSize) && v.stock > 0
     ) || variants.find((v) => v.color === color && v.stock > 0);
-    if (match) onSelect(match.id);
+    if (match) {
+      onSelect(match.id);
+      onColorChange?.(match.color_hex);
+    }
   }
 
   return (

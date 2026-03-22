@@ -1,9 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { formatPrice } from "@/lib/utils";
-import { ProductActions } from "@/components/product/ProductActions";
+import { ProductDetailClient } from "@/components/product/ProductDetailClient";
 import { ReviewSection } from "@/components/product/ReviewSection";
-import { ProductImageGallery } from "@/components/product/ProductImageGallery";
 import { ProductGrid } from "@/components/product/ProductGrid";
 import type { ProductCardData } from "@/components/product/ProductCard";
 
@@ -48,13 +46,18 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
 
   if (!product) notFound();
 
-  // Now fetch variants + recommendations in parallel (product.id is known)
-  const [{ data: variantsRaw }, catRaw, fillRaw] = await Promise.all([
+  // Now fetch variants, color images, and recommendations in parallel
+  const [{ data: variantsRaw }, { data: colorImagesRaw }, catRaw, fillRaw] = await Promise.all([
     supabase
       .from("product_variants")
       .select("id, size, color, color_hex, stock")
       .eq("product_id", product.id)
       .order("size"),
+    supabase
+      .from("product_images")
+      .select("url, color_hex, sort_order")
+      .eq("product_id", product.id)
+      .order("sort_order"),
     product.category_id
       ? supabase
           .from("products")
@@ -81,20 +84,38 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
 
   const justForYou = [...catProducts, ...fillProducts].slice(0, 8);
 
-  const galleryImages = (product.images ?? [] as string[]).filter(
-    (s: unknown): s is string => typeof s === "string" && s.startsWith("https://")
-  );
+  // Build color image map and gallery images
+  const colorImageMap: Record<string, string[]> = {};
+  for (const img of colorImagesRaw ?? []) {
+    if (img.color_hex) {
+      (colorImageMap[img.color_hex] ??= []).push(img.url);
+    }
+  }
+
+  // Gallery: use product_images table if populated, else fallback to products.images TEXT[]
+  let galleryImages: string[];
+  if (colorImagesRaw && colorImagesRaw.length > 0) {
+    galleryImages = colorImagesRaw.map((i) => i.url);
+  } else {
+    galleryImages = (product.images ?? [] as string[]).filter(
+      (s: unknown): s is string => typeof s === "string" && s.startsWith("https://")
+    );
+  }
   if (galleryImages.length === 0) galleryImages.push(FALLBACK_IMAGE);
 
   const variants = variantsRaw ?? [];
 
-  const productForActions = {
+  const productForClient = {
     id: product.id,
     slug: product.slug,
     name: product.name_en,
     nameMn: product.name_mn,
     price: product.base_price,
+    compareAtPrice: product.compare_at_price ?? null,
     images: product.images ?? [],
+    brand: product.brand,
+    descriptionEn: product.description_en ?? null,
+    descriptionMn: product.description_mn ?? null,
   };
 
   const jsonLd = {
@@ -122,49 +143,15 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-10 max-w-[1100px] mx-auto">
-        {/* ── Image gallery ── */}
-        <ProductImageGallery
-          images={galleryImages}
-          alt={isMn ? product.name_mn : product.name_en}
-        />
-
-        {/* ── Product info — sticky on desktop ── */}
-        <div className="space-y-6 md:pt-4 md:sticky md:top-6 md:self-start">
-          <div>
-            <p className="text-[11px] text-gray-500 mb-2">{product.brand}</p>
-            <h1 className="text-[20px] font-normal mb-3">
-              {isMn ? product.name_mn : product.name_en}
-            </h1>
-            <div className="flex items-baseline gap-3">
-              {product.compare_at_price && product.compare_at_price > product.base_price && (
-                <span className="text-[15px] text-gray-400 line-through">
-                  {formatPrice(product.compare_at_price, locale as "mn" | "en")}
-                </span>
-              )}
-              <span className="text-[17px]">
-                {formatPrice(product.base_price, locale as "mn" | "en")}
-              </span>
-            </div>
-          </div>
-
-          <ProductActions
-            product={productForActions}
-            variants={variants}
-            locale={locale}
-            isMn={isMn}
-          />
-
-          <div className="border-t border-gray-100 pt-6">
-            <p className="text-[11px] uppercase tracking-wide mb-2">
-              {isMn ? "Тайлбар" : "Description"}
-            </p>
-            <p className="text-[13px] leading-[1.7]">
-              {isMn ? product.description_mn : product.description_en}
-            </p>
-          </div>
-        </div>
-      </div>
+      <ProductDetailClient
+        galleryImages={galleryImages}
+        colorImageMap={colorImageMap}
+        alt={isMn ? product.name_mn : product.name_en}
+        product={productForClient}
+        variants={variants}
+        locale={locale}
+        isMn={isMn}
+      />
 
       {/* ── Just for you ── */}
       {justForYou.length > 0 && (

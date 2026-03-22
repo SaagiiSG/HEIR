@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { X, Star, Plus, Check, Loader2, ChevronUp, ChevronDown, GripVertical } from "lucide-react";
+import { X, Star, Plus, Check, Loader2, ChevronUp, ChevronDown, GripVertical, Eye, EyeOff } from "lucide-react";
 import type { LandingPageConfig, NewInSlot, CollectionSlot, FeaturedReview, FaqItem, ReviewScreenshot } from "@/lib/landing-page-types";
 import { ProductPicker } from "./ProductPicker";
 import { CollectionSlotModal } from "./CollectionSlotModal";
@@ -195,6 +195,13 @@ export function EditorPanel({ config, onChange }: EditorPanelProps) {
   function handleCollectionSave(index: number, slot: CollectionSlot) {
     const collections = [...config.collections];
     collections[index] = slot;
+    onChange({ ...config, collections });
+  }
+
+  function toggleCollectionVisibility(index: number) {
+    const collections = [...config.collections];
+    const current = collections[index].visible ?? true;
+    collections[index] = { ...collections[index], visible: !current };
     onChange({ ...config, collections });
   }
 
@@ -468,32 +475,49 @@ export function EditorPanel({ config, onChange }: EditorPanelProps) {
           {/* ── Collections ── */}
           {activeSection === "collections" && (
             <div className="space-y-2">
-              <p className="text-[10px] text-gray-400">Click a slot to pick a category and set the tile image.</p>
-              {config.collections.map((col, i) => (
-                <button
-                  key={i}
-                  onClick={() => setCollectionModalIndex(i)}
-                  className="w-full flex items-center gap-3 border border-gray-100 p-3 hover:border-black transition-colors group text-left"
-                >
-                  {/* Thumbnail */}
-                  <div className="w-12 h-12 bg-[#f5f5f5] shrink-0 overflow-hidden">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={col.imageUrl} alt="" className="w-full h-full object-cover" />
-                  </div>
+              <p className="text-[10px] text-gray-400">Click a slot to edit. Toggle the eye icon to show/hide a card on the landing page.</p>
+              {config.collections.map((col, i) => {
+                const visible = col.visible ?? true;
+                return (
+                  <div
+                    key={i}
+                    className={`flex items-center gap-2 border p-3 transition-colors ${visible ? "border-gray-100" : "border-gray-100 bg-gray-50"}`}
+                  >
+                    {/* Thumbnail */}
+                    <div className={`w-12 h-12 bg-[#f5f5f5] shrink-0 overflow-hidden ${!visible ? "opacity-40" : ""}`}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={col.imageUrl} alt="" className="w-full h-full object-cover" />
+                    </div>
 
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[12px] font-medium truncate">{col.label_en || <span className="text-gray-400">Slot {i + 1}</span>}</p>
-                    <p className="text-[10px] text-gray-400 truncate">{col.label_mn}</p>
-                    {col.slug && (
-                      <p className="text-[9px] text-blue-400 mt-0.5">↳ {col.slug}</p>
-                    )}
-                  </div>
+                    <div className={`flex-1 min-w-0 ${!visible ? "opacity-40" : ""}`}>
+                      <p className="text-[12px] font-medium truncate">{col.label_en || <span className="text-gray-400">Slot {i + 1}</span>}</p>
+                      <p className="text-[10px] text-gray-400 truncate">{col.label_mn}</p>
+                      {col.slug && (
+                        <p className="text-[9px] text-blue-400 mt-0.5">↳ {col.slug}</p>
+                      )}
+                    </div>
 
-                  <span className="text-[10px] text-gray-400 group-hover:text-black transition-colors shrink-0">
-                    Edit →
-                  </span>
-                </button>
-              ))}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        onClick={() => toggleCollectionVisibility(i)}
+                        title={visible ? "Hide from landing page" : "Show on landing page"}
+                        className={`p-1.5 transition-colors ${visible ? "text-gray-400 hover:text-black" : "text-gray-300 hover:text-black"}`}
+                      >
+                        {visible
+                          ? <Eye className="w-3.5 h-3.5" strokeWidth={1.5} />
+                          : <EyeOff className="w-3.5 h-3.5" strokeWidth={1.5} />
+                        }
+                      </button>
+                      <button
+                        onClick={() => setCollectionModalIndex(i)}
+                        className="text-[10px] border border-gray-200 px-2.5 py-1 hover:border-black transition-colors"
+                      >
+                        Edit
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
 

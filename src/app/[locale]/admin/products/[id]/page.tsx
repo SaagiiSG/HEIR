@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { VariantDraft } from "@/components/admin/VariantManager";
 import type { UploadedImage } from "@/components/admin/ImageUploader";
 import { AdminBackLink } from "@/components/admin/AdminBackLink";
+import { deleteProduct, saveProduct } from "@/lib/actions/products";
 
 export default function EditProductPage() {
   const params = useParams();
@@ -33,6 +34,15 @@ export default function EditProductPage() {
 
       if (productRes.data) {
         const p = productRes.data;
+
+        // Build per-color image map from product_images tagged with color_hex
+        const colorImgsByHex: Record<string, string[]> = {};
+        for (const img of p.product_images ?? []) {
+          if (img.color_hex) {
+            (colorImgsByHex[img.color_hex] ??= []).push(img.url);
+          }
+        }
+
         setInitialData({
           name_mn: p.name_mn,
           name_en: p.name_en,
@@ -43,11 +53,13 @@ export default function EditProductPage() {
           category_id: p.category_id ?? "",
           is_active: p.is_active,
           is_featured: p.is_featured ?? false,
-          images: (p.product_images ?? []).map((img: { id: string; url: string; is_primary: boolean }) => ({
-            id: img.id,
-            url: img.url,
-            is_primary: img.is_primary,
-          })),
+          images: (p.product_images ?? [])
+            .filter((img: { color_hex: string | null }) => !img.color_hex)
+            .map((img: { id: string; url: string; is_primary: boolean }) => ({
+              id: img.id,
+              url: img.url,
+              is_primary: img.is_primary,
+            })),
           variants: (p.product_variants ?? []).map((v: { id: string; size: string; color: string; color_hex: string | null; stock: number; sku: string | null }) => ({
             id: v.id,
             size: v.size,
@@ -56,6 +68,7 @@ export default function EditProductPage() {
             color_hex: v.color_hex ?? "",
             stock: v.stock,
             sku: v.sku ?? "",
+            images: colorImgsByHex[v.color_hex ?? ""] ?? [],
           })),
         });
       }
@@ -77,94 +90,43 @@ export default function EditProductPage() {
     variants: VariantDraft[];
     images: UploadedImage[];
   }) {
-    const supabase = createClient();
-
-    // Update product
-    const { error: updateError } = await supabase
-      .from("products")
-      .update({
-        name_en: data.name_en,
-        name_mn: data.name_mn,
-        description_en: data.description_en,
-        description_mn: data.description_mn,
-        base_price: data.base_price,
-        compare_at_price: data.compare_at_price || null,
-        category_id: data.category_id || null,
-        is_active: data.is_active,
-        is_featured: data.is_featured,
-      })
-      .eq("id", productId);
-
-    if (updateError) {
-      alert(updateError.message);
-      return;
-    }
-
-    // Sync images: delete all existing, re-insert current set
-    await supabase.from("product_images").delete().eq("product_id", productId);
-    if (data.images.length > 0) {
-      await supabase.from("product_images").insert(
-        data.images.map((img, i) => ({
-          product_id: productId,
-          url: img.url,
-          is_primary: img.is_primary,
-          sort_order: i,
-        }))
+    try {
+      await saveProduct(
+        productId,
+        {
+          name_en: data.name_en,
+          name_mn: data.name_mn,
+          description_en: data.description_en,
+          description_mn: data.description_mn,
+          base_price: data.base_price,
+          compare_at_price: data.compare_at_price || null,
+          category_id: data.category_id || null,
+          is_active: data.is_active,
+          is_featured: data.is_featured,
+        },
+        data.images,
+        data.variants,
       );
+      router.push(`/${locale}/admin/products`);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to save product");
     }
-
-    // Sync products.images TEXT[] (primary first, then rest in order)
-    const orderedUrls = [
-      ...data.images.filter((img) => img.is_primary),
-      ...data.images.filter((img) => !img.is_primary),
-    ].map((img) => img.url);
-    await supabase.from("products").update({ images: orderedUrls.length ? orderedUrls : [] }).eq("id", productId);
-
-    // Sync variants: delete all existing, re-insert current set
-    await supabase.from("product_variants").delete().eq("product_id", productId);
-    for (const variant of data.variants) {
-      const { data: productData } = await supabase
-        .from("products")
-        .select("slug")
-        .eq("id", productId)
-        .single();
-      const slug = productData?.slug ?? productId;
-      const colorSlug = variant.color_name_en.toLowerCase().replace(/\s+/g, "-");
-      const sku = `${slug}-${variant.size}-${colorSlug}`.slice(0, 60);
-
-      const { data: insertedVariant } = await supabase
-        .from("product_variants")
-        .insert({
-          product_id: productId,
-          size: variant.size,
-          color: variant.color_name_en,
-          color_hex: variant.color_hex,
-          sku,
-          stock: variant.stock,
-        })
-        .select("id")
-        .single();
-
-      if (insertedVariant) {
-        await supabase.from("inventory").upsert({
-          variant_id: insertedVariant.id,
-          quantity: variant.stock,
-        });
-      }
-    }
-
-    router.push(`/${locale}/admin/products`);
   }
 
+  const [deleteConfirming, setDeleteConfirming] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
   async function handleDelete() {
-    if (!confirm(locale === "mn" ? "Устгах уу?" : "Delete this product?")) return;
-    const supabase = createClient();
-    const { error } = await supabase.from("products").delete().eq("id", productId);
-    if (error) {
-      alert(error.message);
-      return;
+    if (!deleteConfirming) { setDeleteConfirming(true); return; }
+    setDeleteLoading(true);
+    try {
+      await deleteProduct(productId);
+      router.push(`/${locale}/admin/products`);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to delete product");
+      setDeleteLoading(false);
+      setDeleteConfirming(false);
     }
-    router.push(`/${locale}/admin/products`);
   }
 
   if (loading) {
@@ -184,12 +146,33 @@ export default function EditProductPage() {
             {locale === "mn" ? "Бараа засах" : "Edit Product"}
           </h1>
         </div>
-        <button
-          onClick={handleDelete}
-          className="text-[12px] text-red-500 hover:underline"
-        >
-          {locale === "mn" ? "Устгах" : "Delete"}
-        </button>
+        {deleteConfirming ? (
+          <div className="flex items-center gap-2">
+            <span className="text-[12px] text-gray-500">
+              {locale === "mn" ? "Итгэлтэй юу?" : "Sure?"}
+            </span>
+            <button
+              onClick={handleDelete}
+              disabled={deleteLoading}
+              className="text-[12px] text-red-500 hover:underline disabled:opacity-50"
+            >
+              {deleteLoading ? "..." : locale === "mn" ? "Тийм" : "Yes, delete"}
+            </button>
+            <button
+              onClick={() => setDeleteConfirming(false)}
+              className="text-[12px] text-gray-400 hover:underline"
+            >
+              {locale === "mn" ? "Үгүй" : "Cancel"}
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={handleDelete}
+            className="text-[12px] text-red-500 hover:underline"
+          >
+            {locale === "mn" ? "Устгах" : "Delete"}
+          </button>
+        )}
       </div>
 
       <div className="bg-white border border-gray-100 p-8">

@@ -15,6 +15,7 @@ export interface CollectionSlot {
   label_mn: string;
   imageUrl: string;     // uploaded to Storage
   productIds: string[]; // ordered curated product IDs
+  visible?: boolean;    // defaults to true when undefined
 }
 
 export interface FeaturedReview {

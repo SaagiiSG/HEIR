@@ -111,6 +111,29 @@ export default function NewProductPage() {
       }
     }
 
+    // Insert per-color images (deduplicated by color_hex)
+    const seenColors = new Map<string, string[]>();
+    for (const v of data.variants) {
+      if (!seenColors.has(v.color_hex)) seenColors.set(v.color_hex, v.images ?? []);
+    }
+    const colorImageRows: Array<{ product_id: string; url: string; color_hex: string; is_primary: boolean; sort_order: number }> = [];
+    let colorSortOrder = data.images.length;
+    for (const [colorHex, urls] of seenColors) {
+      for (const url of urls) {
+        colorImageRows.push({ product_id: product.id, url, color_hex: colorHex, is_primary: false, sort_order: colorSortOrder++ });
+      }
+    }
+    if (colorImageRows.length > 0) {
+      await supabase.from("product_images").insert(colorImageRows);
+      // Sync products.images TEXT[] to include color image URLs
+      const regularUrls = [
+        ...data.images.filter((img) => img.is_primary),
+        ...data.images.filter((img) => !img.is_primary),
+      ].map((img) => img.url);
+      const allUrls = [...regularUrls, ...colorImageRows.map((r) => r.url)];
+      await supabase.from("products").update({ images: allUrls }).eq("id", product.id);
+    }
+
     router.push(`/${locale}/admin/products`);
   }
 

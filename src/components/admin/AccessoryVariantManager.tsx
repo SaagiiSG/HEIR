@@ -1,37 +1,34 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Plus, Trash2, X } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { VariantImageUpload } from "@/components/admin/VariantImageUpload";
 import type { VariantDraft } from "./VariantManager";
 
-const ALL_SHOE_SIZES = ["38", "39", "40", "41", "42", "43", "44", "45", "46"];
-
-interface ShoeColor {
+interface AccessoryColor {
   color_name_mn: string;
   color_name_en: string;
   color_hex: string;
-  sizes: string[];  // selected sizes for this color
+  sizes: string[];
   stock: number;
-  images: string[]; // uploaded image URLs for this color
+  images: string[];
 }
 
-interface ShoeVariantManagerProps {
+interface AccessoryVariantManagerProps {
   initialVariants?: VariantDraft[];
   onChange: (variants: VariantDraft[]) => void;
 }
 
-function emptyColor(): ShoeColor {
+function emptyColor(): AccessoryColor {
   return { color_name_mn: "", color_name_en: "", color_hex: "#000000", sizes: [], stock: 0, images: [] };
 }
 
-/** Derive colors (with per-color sizes) from a flat VariantDraft[] */
-function hydrateFromVariants(variants: VariantDraft[]): ShoeColor[] {
+function hydrateFromVariants(variants: VariantDraft[]): AccessoryColor[] {
   if (!variants.length) return [emptyColor()];
 
-  const map = new Map<string, ShoeColor>();
+  const map = new Map<string, AccessoryColor>();
   for (const v of variants) {
     if (!map.has(v.color_hex)) {
       map.set(v.color_hex, {
@@ -43,22 +40,30 @@ function hydrateFromVariants(variants: VariantDraft[]): ShoeColor[] {
         images: v.images ?? [],
       });
     }
-    if (ALL_SHOE_SIZES.includes(v.size)) {
-      map.get(v.color_hex)!.sizes.push(v.size);
-    }
+    if (v.size) map.get(v.color_hex)!.sizes.push(v.size);
   }
 
   return map.size ? Array.from(map.values()) : [emptyColor()];
 }
 
-/** Expand colors → flat VariantDraft[] */
-function buildVariants(colors: ShoeColor[]): VariantDraft[] {
+function buildVariants(colors: AccessoryColor[]): VariantDraft[] {
   const out: VariantDraft[] = [];
   for (const color of colors) {
-    const sorted = [...color.sizes].sort((a, b) => Number(a) - Number(b));
-    for (const size of sorted) {
+    for (const size of color.sizes) {
       out.push({
         size,
+        color_name_mn: color.color_name_mn,
+        color_name_en: color.color_name_en,
+        color_hex: color.color_hex,
+        sku: "",
+        stock: color.stock,
+        images: color.images,
+      });
+    }
+    // If no sizes added yet, emit a placeholder so the color isn't lost
+    if (color.sizes.length === 0) {
+      out.push({
+        size: "",
         color_name_mn: color.color_name_mn,
         color_name_en: color.color_name_en,
         color_hex: color.color_hex,
@@ -71,8 +76,8 @@ function buildVariants(colors: ShoeColor[]): VariantDraft[] {
   return out;
 }
 
-export function ShoeVariantManager({ initialVariants, onChange }: ShoeVariantManagerProps) {
-  const [colors, setColors] = useState<ShoeColor[]>(() =>
+export function AccessoryVariantManager({ initialVariants, onChange }: AccessoryVariantManagerProps) {
+  const [colors, setColors] = useState<AccessoryColor[]>(() =>
     hydrateFromVariants(initialVariants ?? [])
   );
 
@@ -89,23 +94,31 @@ export function ShoeVariantManager({ initialVariants, onChange }: ShoeVariantMan
     setColors((prev) => prev.filter((_, i) => i !== index));
   }
 
-  function updateColor(index: number, patch: Partial<ShoeColor>) {
+  function updateColor(index: number, patch: Partial<AccessoryColor>) {
     setColors((prev) => prev.map((c, i) => (i === index ? { ...c, ...patch } : c)));
   }
 
-  function toggleSize(colorIndex: number, size: string) {
+  function addSize(colorIndex: number, size: string) {
+    const trimmed = size.trim();
+    if (!trimmed) return;
     setColors((prev) =>
       prev.map((c, i) => {
         if (i !== colorIndex) return c;
-        const sizes = c.sizes.includes(size)
-          ? c.sizes.filter((s) => s !== size)
-          : [...c.sizes, size];
-        return { ...c, sizes };
+        if (c.sizes.includes(trimmed)) return c; // no duplicates
+        return { ...c, sizes: [...c.sizes, trimmed] };
       })
     );
   }
 
-  const totalVariants = colors.reduce((sum, c) => sum + c.sizes.length, 0);
+  function removeSize(colorIndex: number, size: string) {
+    setColors((prev) =>
+      prev.map((c, i) =>
+        i !== colorIndex ? c : { ...c, sizes: c.sizes.filter((s) => s !== size) }
+      )
+    );
+  }
+
+  const totalVariants = colors.reduce((sum, c) => sum + Math.max(c.sizes.length, 1), 0);
 
   return (
     <div className="space-y-3">
@@ -114,7 +127,7 @@ export function ShoeVariantManager({ initialVariants, onChange }: ShoeVariantMan
           Colors ({colors.length})
           {totalVariants > 0 && (
             <span className="ml-2 text-gray-400 normal-case tracking-normal">
-              → {totalVariants} variant{totalVariants !== 1 ? "s" : ""} total
+              → {colors.reduce((s, c) => s + c.sizes.length, 0)} variant{colors.reduce((s, c) => s + c.sizes.length, 0) !== 1 ? "s" : ""} total
             </span>
           )}
         </p>
@@ -188,43 +201,79 @@ export function ShoeVariantManager({ initialVariants, onChange }: ShoeVariantMan
               />
             </div>
 
-            {/* Per-color size tags */}
-            <div>
-              <p className="text-[11px] uppercase tracking-wide mb-2">
-                Sizes
-                {c.sizes.length > 0 && (
-                  <span className="ml-2 text-gray-400 normal-case tracking-normal">
-                    ({[...c.sizes].sort((a, b) => Number(a) - Number(b)).join(", ")})
-                  </span>
-                )}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {ALL_SHOE_SIZES.map((size) => {
-                  const active = c.sizes.includes(size);
-                  return (
-                    <button
-                      key={size}
-                      type="button"
-                      onClick={() => toggleSize(i, size)}
-                      className={`px-3 py-1 text-[12px] border transition-colors ${
-                        active
-                          ? "border-black bg-black text-white"
-                          : "border-gray-300 text-gray-500 hover:border-black hover:text-black"
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  );
-                })}
-              </div>
-              {c.sizes.length === 0 && (
-                <p className="text-[11px] text-gray-400 mt-1.5">Select at least one size.</p>
-              )}
-            </div>
+            {/* Free-form size tag input */}
+            <SizeTagInput
+              sizes={c.sizes}
+              onAdd={(size) => addSize(i, size)}
+              onRemove={(size) => removeSize(i, size)}
+            />
 
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function SizeTagInput({
+  sizes,
+  onAdd,
+  onRemove,
+}: {
+  sizes: string[];
+  onAdd: (size: string) => void;
+  onRemove: (size: string) => void;
+}) {
+  const [input, setInput] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (input.trim()) {
+        onAdd(input.trim());
+        setInput("");
+      }
+    } else if (e.key === "Backspace" && input === "" && sizes.length > 0) {
+      onRemove(sizes[sizes.length - 1]);
+    }
+  }
+
+  return (
+    <div>
+      <p className="text-[11px] uppercase tracking-wide mb-2">Sizes</p>
+      <div
+        className="flex flex-wrap gap-1.5 items-center min-h-[40px] border border-gray-300 px-2 py-1.5 focus-within:border-black transition-colors cursor-text"
+        onClick={() => inputRef.current?.focus()}
+      >
+        {sizes.map((size) => (
+          <span
+            key={size}
+            className="inline-flex items-center gap-1 bg-black text-white text-[11px] px-2 py-0.5"
+          >
+            {size}
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onRemove(size); }}
+              className="hover:opacity-60 transition-opacity"
+            >
+              <X className="w-2.5 h-2.5" strokeWidth={2.5} />
+            </button>
+          </span>
+        ))}
+        <input
+          ref={inputRef}
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={sizes.length === 0 ? "Type a size and press Enter…" : ""}
+          className="flex-1 min-w-[120px] outline-none text-[12px] bg-transparent py-0.5"
+        />
+      </div>
+      {sizes.length === 0 && (
+        <p className="text-[11px] text-gray-400 mt-1">Add at least one size.</p>
+      )}
     </div>
   );
 }
