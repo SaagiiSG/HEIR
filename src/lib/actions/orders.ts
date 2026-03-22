@@ -13,6 +13,7 @@ export interface OrderItem {
   quantity: number;
   size: string;
   color: string;
+  image?: string;
 }
 
 export interface CreateOrderInput {
@@ -78,6 +79,7 @@ export async function createOrder(
         color: item.color,
         price: item.price,
         quantity: item.quantity,
+        image: item.image ?? null,
       }))
     );
 

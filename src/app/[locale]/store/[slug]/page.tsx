@@ -93,15 +93,17 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   }
 
   // Gallery: use product_images table if populated, else fallback to products.images TEXT[]
-  let galleryImages: string[];
+  let galleryImagesWithColor: { url: string; color_hex: string | null }[];
   if (colorImagesRaw && colorImagesRaw.length > 0) {
-    galleryImages = colorImagesRaw.map((i) => i.url);
+    galleryImagesWithColor = colorImagesRaw.map((i) => ({ url: i.url, color_hex: i.color_hex ?? null }));
   } else {
-    galleryImages = (product.images ?? [] as string[]).filter(
+    const urls = (product.images ?? [] as string[]).filter(
       (s: unknown): s is string => typeof s === "string" && s.startsWith("https://")
     );
+    galleryImagesWithColor = urls.map((url: string) => ({ url, color_hex: null }));
   }
-  if (galleryImages.length === 0) galleryImages.push(FALLBACK_IMAGE);
+  if (galleryImagesWithColor.length === 0) galleryImagesWithColor.push({ url: FALLBACK_IMAGE, color_hex: null });
+  const galleryImages = galleryImagesWithColor.map((i) => i.url);
 
   const variants = variantsRaw ?? [];
 
@@ -144,7 +146,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <ProductDetailClient
-        galleryImages={galleryImages}
+        galleryImages={galleryImagesWithColor}
         colorImageMap={colorImageMap}
         alt={isMn ? product.name_mn : product.name_en}
         product={productForClient}

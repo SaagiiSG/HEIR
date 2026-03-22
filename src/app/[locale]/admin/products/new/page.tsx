@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { VariantDraft } from "@/components/admin/VariantManager";
 import type { UploadedImage } from "@/components/admin/ImageUploader";
 import { AdminBackLink } from "@/components/admin/AdminBackLink";
+import { createProduct } from "@/lib/actions/products";
 
 export default function NewProductPage() {
   const params = useParams();
@@ -35,106 +36,26 @@ export default function NewProductPage() {
     variants: VariantDraft[];
     images: UploadedImage[];
   }) {
-    const supabase = createClient();
-
-    // Generate slug from English name
-    const slug = data.name_en
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "")
-      + "-" + Math.random().toString(36).slice(2, 6);
-
-    // Insert product
-    const { data: product, error: productError } = await supabase
-      .from("products")
-      .insert({
-        slug,
-        name_en: data.name_en,
-        name_mn: data.name_mn,
-        description_en: data.description_en,
-        description_mn: data.description_mn,
-        base_price: data.base_price,
-        compare_at_price: data.compare_at_price || null,
-        category_id: data.category_id || null,
-        is_active: data.is_active,
-        is_featured: data.is_featured,
-      })
-      .select("id")
-      .single();
-
-    if (productError || !product) {
-      alert(productError?.message ?? "Failed to create product");
-      return;
-    }
-
-    // Insert product images
-    if (data.images.length > 0) {
-      await supabase.from("product_images").insert(
-        data.images.map((img, i) => ({
-          product_id: product.id,
-          url: img.url,
-          is_primary: img.is_primary,
-          sort_order: i,
-        }))
+    try {
+      await createProduct(
+        {
+          name_en: data.name_en,
+          name_mn: data.name_mn,
+          description_en: data.description_en,
+          description_mn: data.description_mn,
+          base_price: data.base_price,
+          compare_at_price: data.compare_at_price || null,
+          category_id: data.category_id || null,
+          is_active: data.is_active,
+          is_featured: data.is_featured,
+        },
+        data.images,
+        data.variants,
       );
-
-      // Sync products.images TEXT[] (primary first, then rest in order)
-      const orderedUrls = [
-        ...data.images.filter((img) => img.is_primary),
-        ...data.images.filter((img) => !img.is_primary),
-      ].map((img) => img.url);
-      await supabase.from("products").update({ images: orderedUrls }).eq("id", product.id);
+      router.push(`/${locale}/admin/products`);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to create product");
     }
-
-    // Insert variants + inventory
-    for (const variant of data.variants) {
-      const colorSlug = variant.color_name_en.toLowerCase().replace(/\s+/g, "-");
-      const sku = `${slug}-${variant.size}-${colorSlug}`.slice(0, 60);
-      const { data: insertedVariant } = await supabase
-        .from("product_variants")
-        .insert({
-          product_id: product.id,
-          size: variant.size,
-          color: variant.color_name_en,
-          color_hex: variant.color_hex,
-          sku,
-          stock: variant.stock,
-        })
-        .select("id")
-        .single();
-
-      if (insertedVariant) {
-        await supabase.from("inventory").insert({
-          variant_id: insertedVariant.id,
-          quantity: variant.stock,
-        });
-      }
-    }
-
-    // Insert per-color images (deduplicated by color_hex)
-    const seenColors = new Map<string, string[]>();
-    for (const v of data.variants) {
-      if (!seenColors.has(v.color_hex)) seenColors.set(v.color_hex, v.images ?? []);
-    }
-    const colorImageRows: Array<{ product_id: string; url: string; color_hex: string; is_primary: boolean; sort_order: number }> = [];
-    let colorSortOrder = data.images.length;
-    for (const [colorHex, urls] of seenColors) {
-      for (const url of urls) {
-        colorImageRows.push({ product_id: product.id, url, color_hex: colorHex, is_primary: false, sort_order: colorSortOrder++ });
-      }
-    }
-    if (colorImageRows.length > 0) {
-      await supabase.from("product_images").insert(colorImageRows);
-      // Sync products.images TEXT[] to include color image URLs
-      const regularUrls = [
-        ...data.images.filter((img) => img.is_primary),
-        ...data.images.filter((img) => !img.is_primary),
-      ].map((img) => img.url);
-      const allUrls = [...regularUrls, ...colorImageRows.map((r) => r.url)];
-      await supabase.from("products").update({ images: allUrls }).eq("id", product.id);
-    }
-
-    router.push(`/${locale}/admin/products`);
   }
 
   return (

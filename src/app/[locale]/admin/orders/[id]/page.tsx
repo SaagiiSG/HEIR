@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { AdminBackLink } from "@/components/admin/AdminBackLink";
@@ -36,7 +37,7 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
       order_items (
         id, quantity, price,
         product_name_en, product_name_mn,
-        size, color
+        size, color, image
       )
     `)
     .eq("id", id)
@@ -99,7 +100,22 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
             {items.map((item) => (
               <tr key={item.id} className="border-b border-gray-50">
                 <td className="py-3 pr-4">
-                  {isMn ? item.product_name_mn : item.product_name_en}
+                  <div className="flex items-center gap-3">
+                    {item.image ? (
+                      <div className="relative w-10 h-12 shrink-0 bg-gray-50 overflow-hidden rounded-sm">
+                        <Image
+                          src={item.image}
+                          alt={isMn ? item.product_name_mn : item.product_name_en}
+                          fill
+                          className="object-cover"
+                          sizes="40px"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-10 h-12 shrink-0 bg-gray-100 rounded-sm" />
+                    )}
+                    <span>{isMn ? item.product_name_mn : item.product_name_en}</span>
+                  </div>
                 </td>
                 <td className="py-3 pr-4 text-gray-500">
                   {item.size} / {item.color}

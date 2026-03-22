@@ -3,6 +3,17 @@
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+export async function getProductForEdit(productId: string) {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("products")
+    .select("*, product_images(*), product_variants(*)")
+    .eq("id", productId)
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 export async function deleteProduct(productId: string) {
   const supabase = createAdminClient();
 
@@ -40,6 +51,98 @@ interface VariantInput {
 interface ImageInput {
   url: string;
   is_primary: boolean;
+}
+
+export async function createProduct(
+  fields: {
+    name_en: string;
+    name_mn: string;
+    description_en: string;
+    description_mn: string;
+    base_price: number;
+    compare_at_price: number | null;
+    category_id: string | null;
+    is_active: boolean;
+    is_featured: boolean;
+  },
+  images: ImageInput[],
+  variants: VariantInput[],
+): Promise<string> {
+  const supabase = createAdminClient();
+
+  const slug =
+    fields.name_en
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "") +
+    "-" +
+    Math.random().toString(36).slice(2, 6);
+
+  const { data: product, error: insertError } = await supabase
+    .from("products")
+    .insert({ slug, ...fields })
+    .select("id")
+    .single();
+
+  if (insertError || !product) throw new Error(insertError?.message ?? "Failed to create product");
+  const productId = product.id;
+
+  // Insert regular images
+  const regularRows = images.map((img, i) => ({
+    product_id: productId,
+    url: img.url,
+    is_primary: img.is_primary,
+    sort_order: i,
+    color_hex: null as string | null,
+  }));
+
+  // Per-color images (deduplicated by color_hex)
+  const seenColors = new Map<string, string[]>();
+  for (const v of variants) {
+    if (!seenColors.has(v.color_hex)) seenColors.set(v.color_hex, v.images ?? []);
+  }
+  const colorRows: typeof regularRows = [];
+  let sortOrder = images.length;
+  for (const [colorHex, urls] of seenColors) {
+    for (const url of urls) {
+      colorRows.push({ product_id: productId, url, is_primary: false, sort_order: sortOrder++, color_hex: colorHex });
+    }
+  }
+
+  const allImageRows = [...regularRows, ...colorRows];
+  if (allImageRows.length > 0) {
+    await supabase.from("product_images").insert(allImageRows);
+  }
+  const allUrls = allImageRows.map((r) => r.url);
+  await supabase.from("products").update({ images: allUrls }).eq("id", productId);
+
+  // Insert variants + inventory
+  for (const variant of variants) {
+    if (!variant.size) continue;
+    const colorSlug = variant.color_name_en.toLowerCase().replace(/\s+/g, "-");
+    const sku = `${slug}-${variant.size}-${colorSlug}`.slice(0, 60);
+
+    const { data: inserted } = await supabase
+      .from("product_variants")
+      .insert({
+        product_id: productId,
+        size: variant.size,
+        color: variant.color_name_en,
+        color_hex: variant.color_hex,
+        sku,
+        stock: variant.stock,
+      })
+      .select("id")
+      .single();
+
+    if (inserted) {
+      await supabase.from("inventory").insert({ variant_id: inserted.id, quantity: variant.stock });
+    }
+  }
+
+  revalidatePath("/mn/admin/products");
+  revalidatePath("/en/admin/products");
+  return productId;
 }
 
 export async function saveProduct(

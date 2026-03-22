@@ -31,6 +31,7 @@ function Stars({ rating }: { rating: number }) {
 
 export function LandingPagePreview({ config }: LandingPagePreviewProps) {
   const reviews = config.featuredReviews ?? [];
+  const screenshots = config.reviewScreenshots ?? [];
   const exclusive = config.exclusive ?? [];
   const faq = config.faq ?? [];
 
@@ -186,6 +187,34 @@ export function LandingPagePreview({ config }: LandingPagePreviewProps) {
         <section className="px-4 py-8 border-t border-gray-200">
           <div className="border border-dashed border-gray-200 p-8 text-center">
             <p className="text-[10px] text-gray-300">Reviews section — add reviews in the Reviews tab</p>
+          </div>
+        </section>
+      )}
+
+      {/* ── Review Screenshots ── */}
+      {screenshots.length > 0 ? (
+        <section className="py-8 border-t border-gray-200">
+          <h2 className="text-[16px] font-normal leading-[1.15] mb-5 px-4">Customer Reviews</h2>
+          <div className="flex gap-2 overflow-x-auto pl-4 pr-4 pb-1">
+            {screenshots.map((shot) => (
+              <div key={shot.id} className="shrink-0 w-[72px]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={shot.imageUrl}
+                  alt={shot.caption ?? "Review"}
+                  className="w-full aspect-[9/16] object-cover border border-gray-100"
+                />
+                {shot.caption && (
+                  <p className="text-[7px] text-gray-400 mt-1 leading-[1.3] line-clamp-2">{shot.caption}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : (
+        <section className="px-4 py-8 border-t border-gray-200">
+          <div className="border border-dashed border-gray-200 p-8 text-center">
+            <p className="text-[10px] text-gray-300">Screenshots section — add images in the Reviews tab</p>
           </div>
         </section>
       )}

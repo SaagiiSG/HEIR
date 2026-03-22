@@ -134,6 +134,7 @@ export function CheckoutForm({ locale }: CheckoutFormProps) {
         quantity: item.quantity,
         size: item.size,
         color: item.color,
+        image: item.image,
       })),
       subtotal,
     });

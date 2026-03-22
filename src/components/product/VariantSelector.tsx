@@ -25,7 +25,6 @@ export function VariantSelector({
 }: VariantSelectorProps) {
   const t = useTranslations("product");
 
-  // Group variants by size and color
   const sizes = [...new Set(variants.map((v) => v.size))];
   const colors = [...new Set(variants.map((v) => v.color))].map((c) => {
     const v = variants.find((vv) => vv.color === c)!;
@@ -35,20 +34,18 @@ export function VariantSelector({
   const selectedVariant = variants.find((v) => v.id === selectedVariantId);
 
   function selectBySize(size: string) {
-    // Keep same color if possible
     const currentColor = selectedVariant?.color;
-    const match = variants.find(
-      (v) => v.size === size && (!currentColor || v.color === currentColor) && v.stock > 0
-    ) || variants.find((v) => v.size === size && v.stock > 0);
+    const match =
+      variants.find((v) => v.size === size && (!currentColor || v.color === currentColor) && v.stock > 0) ||
+      variants.find((v) => v.size === size && v.stock > 0);
     if (match) onSelect(match.id);
   }
 
   function selectByColor(color: string) {
-    // Keep same size if possible
     const currentSize = selectedVariant?.size;
-    const match = variants.find(
-      (v) => v.color === color && (!currentSize || v.size === currentSize) && v.stock > 0
-    ) || variants.find((v) => v.color === color && v.stock > 0);
+    const match =
+      variants.find((v) => v.color === color && (!currentSize || v.size === currentSize) && v.stock > 0) ||
+      variants.find((v) => v.color === color && v.stock > 0);
     if (match) {
       onSelect(match.id);
       onColorChange?.(match.color_hex);

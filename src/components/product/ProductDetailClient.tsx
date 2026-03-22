@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { ProductImageGallery } from "@/components/product/ProductImageGallery";
 import { ProductActions } from "@/components/product/ProductActions";
 import { formatPrice } from "@/lib/utils";
@@ -14,7 +13,7 @@ interface ProductVariant {
 }
 
 interface ProductDetailClientProps {
-  galleryImages: string[];
+  galleryImages: { url: string; color_hex: string | null }[];
   colorImageMap: Record<string, string[]>;
   alt: string;
   product: {
@@ -36,20 +35,12 @@ interface ProductDetailClientProps {
 
 export function ProductDetailClient({
   galleryImages,
-  colorImageMap,
   alt,
   product,
   variants,
   locale,
   isMn,
 }: ProductDetailClientProps) {
-  const [selectedColorHex, setSelectedColorHex] = useState<string | null>(null);
-
-  const displayImages =
-    selectedColorHex && colorImageMap[selectedColorHex]?.length
-      ? colorImageMap[selectedColorHex]
-      : galleryImages;
-
   const productForActions = {
     id: product.id,
     slug: product.slug,
@@ -63,8 +54,12 @@ export function ProductDetailClient({
     <div className="grid grid-cols-1 md:grid-cols-2 gap-10 max-w-[1100px] mx-auto">
       {/* ── Image gallery ── */}
       <ProductImageGallery
-        images={displayImages}
+        images={galleryImages}
         alt={alt}
+        variants={variants}
+        product={productForActions}
+        locale={locale}
+        isMn={isMn}
       />
 
       {/* ── Product info — sticky on desktop ── */}
@@ -91,7 +86,6 @@ export function ProductDetailClient({
           variants={variants}
           locale={locale}
           isMn={isMn}
-          onColorChange={setSelectedColorHex}
         />
 
         <div className="border-t border-gray-100 pt-6">
