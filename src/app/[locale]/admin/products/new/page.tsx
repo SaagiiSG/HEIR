@@ -13,7 +13,7 @@ export default function NewProductPage() {
   const router = useRouter();
   const locale = (params.locale as string) ?? "mn";
 
-  const [categories, setCategories] = useState<{ id: string; name_mn: string; name_en: string }[]>([]);
+  const [categories, setCategories] = useState<{ id: string; slug: string; name_mn: string; name_en: string }[]>([]);
 
   useEffect(() => {
     const supabase = createClient();
