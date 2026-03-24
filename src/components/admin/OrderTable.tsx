@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { StatusBadge } from "@/components/ui/Badge";
 import { formatPrice } from "@/lib/utils";
+import { OrderDetailDrawer } from "@/components/admin/OrderDetailDrawer";
 
 export interface OrderRow {
   id: string;
@@ -63,7 +62,7 @@ function CopyButton({ text }: { text: string }) {
 }
 
 export function OrderTable({ orders, locale = "mn" }: OrderTableProps) {
-  const router = useRouter();
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   if (orders.length === 0) {
     return (
       <p className="text-[13px] text-gray-400 py-8 text-center">
@@ -73,6 +72,12 @@ export function OrderTable({ orders, locale = "mn" }: OrderTableProps) {
   }
 
   return (
+    <>
+    <OrderDetailDrawer
+      orderId={selectedOrderId}
+      locale={locale}
+      onClose={() => setSelectedOrderId(null)}
+    />
     <div className="overflow-x-auto">
       <table className="w-full text-[12px]">
         <thead>
@@ -101,7 +106,7 @@ export function OrderTable({ orders, locale = "mn" }: OrderTableProps) {
           {orders.map((order) => (
             <tr
               key={order.id}
-              onClick={() => router.push(`/${locale}/admin/orders/${order.id}`)}
+              onClick={() => setSelectedOrderId(order.id)}
               className="border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer"
             >
               <td className="py-3 pr-4">
@@ -142,5 +147,6 @@ export function OrderTable({ orders, locale = "mn" }: OrderTableProps) {
         </tbody>
       </table>
     </div>
+    </>
   );
 }
