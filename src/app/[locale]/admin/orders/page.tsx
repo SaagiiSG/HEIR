@@ -8,13 +8,14 @@ interface AdminOrdersPageProps {
   searchParams: Promise<{ status?: string; view?: string }>;
 }
 
-const STATUS_FILTERS = ["all", "pending", "paid", "processing", "shipped", "delivered", "cancelled"];
+// "active" = all non-pending orders (default view — hides abandoned/duplicate pending orders)
+const STATUS_FILTERS = ["active", "pending", "paid", "processing", "shipped", "delivered", "cancelled"];
 
 const KANBAN_STATUSES = ["pending", "paid", "processing", "shipped", "delivered"] as const;
 
 export default async function AdminOrdersPage({ params, searchParams }: AdminOrdersPageProps) {
   const { locale } = await params;
-  const { status = "all", view } = await searchParams;
+  const { status = "active", view } = await searchParams;
   const isKanban = view === "kanban";
 
   let orders: OrderRow[] = [];
@@ -25,14 +26,16 @@ export default async function AdminOrdersPage({ params, searchParams }: AdminOrd
     let query = supabase
       .from("orders")
       .select("id, created_at, status, total, shipping_first_name, shipping_last_name, shipping_phone, shipping_address1, shipping_address2, shipping_district, shipping_city, shipping_postal_code")
-      .or("expires_at.is.null,expires_at.gt.now(),status.neq.pending")
       .order("created_at", { ascending: false });
 
     if (isKanban) {
       query = query.in("status", [...KANBAN_STATUSES]).limit(500);
     } else {
       query = query.limit(200);
-      if (status !== "all") {
+      if (status === "active") {
+        // Default: everything except pending (hides abandoned checkouts & double-click duplicates)
+        query = query.neq("status", "pending");
+      } else if (status !== "all") {
         query = query.eq("status", status);
       }
     }
@@ -62,6 +65,7 @@ export default async function AdminOrdersPage({ params, searchParams }: AdminOrd
   }
 
   const STATUS_LABELS_MN: Record<string, string> = {
+    active: "Идэвхтэй",
     all: "Бүгд",
     pending: "Хүлээгдэж байна",
     paid: "Төлөгдсөн",
@@ -69,6 +73,17 @@ export default async function AdminOrdersPage({ params, searchParams }: AdminOrd
     shipped: "Хүргэлтэд",
     delivered: "Хүргэгдсэн",
     cancelled: "Цуцлагдсан",
+  };
+
+  const STATUS_LABELS_EN: Record<string, string> = {
+    active: "Active",
+    all: "All",
+    pending: "Pending",
+    paid: "Paid",
+    processing: "Processing",
+    shipped: "Shipped",
+    delivered: "Delivered",
+    cancelled: "Cancelled",
   };
 
   return (
@@ -86,14 +101,14 @@ export default async function AdminOrdersPage({ params, searchParams }: AdminOrd
           {STATUS_FILTERS.map((s) => (
             <a
               key={s}
-              href={`/${locale}/admin/orders${s === "all" ? "" : `?status=${s}`}`}
+              href={`/${locale}/admin/orders${s === "active" ? "" : `?status=${s}`}`}
               className={`px-4 py-2 text-[12px] border-b-2 transition-colors ${
-                status === s || (s === "all" && status === "all")
+                status === s
                   ? "border-black text-black"
                   : "border-transparent text-gray-400 hover:text-black"
               }`}
             >
-              {locale === "mn" ? STATUS_LABELS_MN[s] : s.charAt(0).toUpperCase() + s.slice(1)}
+              {locale === "mn" ? STATUS_LABELS_MN[s] : STATUS_LABELS_EN[s]}
             </a>
           ))}
         </div>

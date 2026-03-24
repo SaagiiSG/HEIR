@@ -40,6 +40,8 @@ export function CheckoutForm({ locale }: CheckoutFormProps) {
   const [serverError, setServerError] = useState<string | null>(null);
   const [phase, setPhase] = useState<PaymentPhase>({ step: "form" });
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Prevents double-submission: once an order is being created, block any further attempts
+  const orderCreatingRef = useRef(false);
 
   const {
     register,
@@ -115,6 +117,8 @@ export function CheckoutForm({ locale }: CheckoutFormProps) {
   }, [phase.step]);
 
   async function onSubmit(data: CheckoutFormData) {
+    if (orderCreatingRef.current) return;
+    orderCreatingRef.current = true;
     setServerError(null);
     const result = await createOrder({
       phone: data.phone,
@@ -140,6 +144,7 @@ export function CheckoutForm({ locale }: CheckoutFormProps) {
     });
 
     if (result.error) {
+      orderCreatingRef.current = false;
       setServerError(result.error);
       return;
     }

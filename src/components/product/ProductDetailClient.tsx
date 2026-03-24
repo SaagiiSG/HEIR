@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { ProductImageGallery } from "@/components/product/ProductImageGallery";
 import { ProductActions } from "@/components/product/ProductActions";
 import { formatPrice } from "@/lib/utils";
@@ -41,6 +42,14 @@ export function ProductDetailClient({
   locale,
   isMn,
 }: ProductDetailClientProps) {
+  const [selectedColorHex, setSelectedColorHex] = useState<string | null>(null);
+
+  // Filter gallery to only show images for the selected color (if any)
+  const visibleImages =
+    selectedColorHex && galleryImages.some((i) => i.color_hex === selectedColorHex)
+      ? galleryImages.filter((i) => i.color_hex === selectedColorHex)
+      : galleryImages;
+
   const productForActions = {
     id: product.id,
     slug: product.slug,
@@ -54,7 +63,7 @@ export function ProductDetailClient({
     <div className="grid grid-cols-1 md:grid-cols-2 gap-10 max-w-[1100px] mx-auto">
       {/* ── Image gallery ── */}
       <ProductImageGallery
-        images={galleryImages}
+        images={visibleImages}
         alt={alt}
         variants={variants}
         product={productForActions}
@@ -86,6 +95,7 @@ export function ProductDetailClient({
           variants={variants}
           locale={locale}
           isMn={isMn}
+          onColorChange={setSelectedColorHex}
         />
 
         <div className="border-t border-gray-100 pt-6">

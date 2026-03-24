@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
 
 interface ConfirmationPageProps {
   params: Promise<{ locale: string }>;
@@ -13,6 +14,9 @@ export default async function ConfirmationPage({
   const { locale } = await params;
   const { order } = await searchParams;
   const t = await getTranslations({ locale, namespace: "checkout" });
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
   return (
     <main className="px-5 py-20 max-w-[500px] mx-auto text-center">
@@ -32,14 +36,15 @@ export default async function ConfirmationPage({
         </p>
       )}
 
-
       <div className="flex flex-col gap-3 items-center">
-        <Link
-          href={`/${locale}/account/orders`}
-          className="inline-block border border-black rounded-full px-6 py-2.5 text-[12px] tracking-wide hover:bg-black hover:text-white transition-colors"
-        >
-          {locale === "mn" ? "Захиалга харах" : "View Orders"}
-        </Link>
+        {user ? (
+          <Link
+            href={`/${locale}/account/orders`}
+            className="inline-block border border-black rounded-full px-6 py-2.5 text-[12px] tracking-wide hover:bg-black hover:text-white transition-colors"
+          >
+            {locale === "mn" ? "Захиалга харах" : "View Orders"}
+          </Link>
+        ) : null}
         <Link
           href={`/${locale}/store`}
           className="text-[12px] text-gray-500 hover:text-black transition-colors"

@@ -37,7 +37,7 @@ export async function createOrder(
   }
 
   try {
-    // Get current user (checkout route is protected so user is always present)
+    // Get current user — may be null for guest checkouts
     const serverClient = await createClient();
     const { data: { user } } = await serverClient.auth.getUser();
 

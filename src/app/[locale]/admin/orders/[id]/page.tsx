@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { AdminBackLink } from "@/components/admin/AdminBackLink";
 import { formatPrice } from "@/lib/utils";
 import { OrderStatusUpdater } from "@/components/admin/OrderStatusUpdater";
+import { CheckBylPaymentButton } from "@/components/admin/CheckBylPaymentButton";
 
 interface AdminOrderDetailPageProps {
   params: Promise<{ locale: string; id: string }>;
@@ -45,12 +46,16 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
 
   if (!order) notFound();
 
-  // Fetch customer email via admin auth (if user_id exists)
-  let customerEmail: string | null = null;
-  if (order.user_id) {
-    const { data: authUser } = await supabase.auth.admin.getUserById(order.user_id);
-    customerEmail = authUser?.user?.email ?? null;
-  }
+  // Fetch customer email + check for BYL invoice in parallel
+  const [authResult, bylResult] = await Promise.all([
+    order.user_id ? supabase.auth.admin.getUserById(order.user_id) : Promise.resolve(null),
+    order.status === "pending"
+      ? supabase.from("payments").select("provider_invoice_id").eq("order_id", id).eq("provider", "byl").maybeSingle()
+      : Promise.resolve(null),
+  ]);
+
+  const customerEmail = authResult ? (authResult as Awaited<ReturnType<typeof supabase.auth.admin.getUserById>>).data?.user?.email ?? null : null;
+  const hasBylInvoice = !!(bylResult as { data?: { provider_invoice_id?: string } | null } | null)?.data?.provider_invoice_id;
 
   const items = order.order_items ?? [];
   const customerName = [order.shipping_first_name, order.shipping_last_name]
@@ -73,6 +78,11 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
         currentStatus={order.status}
         locale={locale}
       />
+
+      {/* Manual BYL payment check — shown only when order is pending with an invoice */}
+      {hasBylInvoice && (
+        <CheckBylPaymentButton orderId={id} isMn={isMn} />
+      )}
 
       {/* Order items */}
       <div className="bg-white border border-gray-100 p-6">
@@ -153,7 +163,14 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
             {isMn ? "Хэрэглэгч" : "Customer"}
           </p>
           <div className="space-y-1 text-[12px]">
-            <p className="font-medium">{customerName}</p>
+            <div className="flex items-center gap-2">
+              <p className="font-medium">{customerName}</p>
+              {!order.user_id && (
+                <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">
+                  {isMn ? "Зочин" : "Guest"}
+                </span>
+              )}
+            </div>
             {customerEmail && <p className="text-gray-500">{customerEmail}</p>}
             {order.shipping_phone && <p className="text-gray-500">{order.shipping_phone}</p>}
             <p className="text-[11px] text-gray-400 pt-1">
