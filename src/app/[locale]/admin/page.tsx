@@ -92,13 +92,13 @@ export default async function AdminDashboard({ params }: AdminDashboardProps) {
         .from("orders")
         .select("id", { count: "exact", head: true })
         .eq("status", "paid")
-        .gte("created_at", todayStart.toISOString()),
+        .gte("updated_at", todayStart.toISOString()),
 
       supabase
         .from("orders")
         .select("total")
         .eq("status", "paid")
-        .gte("created_at", monthStart.toISOString()),
+        .gte("updated_at", monthStart.toISOString()),
 
       supabase
         .from("profiles")
@@ -120,23 +120,23 @@ export default async function AdminDashboard({ params }: AdminDashboardProps) {
       // Daily: today's paid orders
       supabase
         .from("orders")
-        .select("created_at, total")
+        .select("updated_at, total")
         .eq("status", "paid")
-        .gte("created_at", todayStart.toISOString()),
+        .gte("updated_at", todayStart.toISOString()),
 
       // Weekly: last 7 days
       supabase
         .from("orders")
-        .select("created_at, total")
+        .select("updated_at, total")
         .eq("status", "paid")
-        .gte("created_at", sevenDaysAgo.toISOString()),
+        .gte("updated_at", sevenDaysAgo.toISOString()),
 
       // Monthly: last 30 days
       supabase
         .from("orders")
-        .select("created_at, total")
+        .select("updated_at, total")
         .eq("status", "paid")
-        .gte("created_at", thirtyDaysAgo.toISOString()),
+        .gte("updated_at", thirtyDaysAgo.toISOString()),
     ]);
 
     ordersToday   = ordersTodayRes.count ?? 0;
@@ -154,19 +154,19 @@ export default async function AdminDashboard({ params }: AdminDashboardProps) {
 
     // Aggregate daily by hour
     (dailyOrdersRes.data ?? []).forEach((o) => {
-      const hour = new Date(o.created_at).getHours();
+      const hour = new Date(o.updated_at).getHours();
       hourMap[hour] += o.total ?? 0;
     });
 
     // Aggregate weekly by date
     (weeklyOrdersRes.data ?? []).forEach((o) => {
-      const day = o.created_at.slice(0, 10);
+      const day = o.updated_at.slice(0, 10);
       if (day in weekMap) weekMap[day] += o.total ?? 0;
     });
 
     // Aggregate monthly by date
     (monthlyOrdersChartRes.data ?? []).forEach((o) => {
-      const day = o.created_at.slice(0, 10);
+      const day = o.updated_at.slice(0, 10);
       if (day in monthMap) monthMap[day] += o.total ?? 0;
     });
 
