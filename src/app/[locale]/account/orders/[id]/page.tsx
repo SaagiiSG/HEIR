@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { StatusBadge } from "@/components/ui/Badge";
 import { createClient } from "@/lib/supabase/server";
 import { formatPrice } from "@/lib/utils";
@@ -66,17 +67,31 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
             color: string;
             quantity: number;
             price: number;
+            image: string | null;
           }) => (
-            <div key={item.id} className="flex justify-between items-start py-3 border-b border-gray-100">
-              <div>
+            <div key={item.id} className="flex items-center gap-4 py-3 border-b border-gray-100">
+              <div className="w-16 h-20 shrink-0 bg-gray-100 overflow-hidden rounded-sm">
+                {item.image ? (
+                  <Image
+                    src={item.image}
+                    alt={locale === "mn" ? item.product_name_mn : item.product_name_en}
+                    width={64}
+                    height={80}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-200" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
                 <p className="text-[13px]">
                   {locale === "mn" ? item.product_name_mn : item.product_name_en}
                 </p>
-                <p className="text-[11px] text-gray-400 mt-0.5">
+                <p className="text-[11px] text-gray-400 mt-1">
                   {item.size}{item.color ? ` / ${item.color}` : ""} · x{item.quantity}
                 </p>
               </div>
-              <p className="text-[13px]">{formatPrice(item.price * item.quantity, locale as "mn" | "en")}</p>
+              <p className="text-[13px] shrink-0">{formatPrice(item.price * item.quantity, locale as "mn" | "en")}</p>
             </div>
           ))}
         </div>
