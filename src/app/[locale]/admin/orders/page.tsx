@@ -1,6 +1,7 @@
 import { OrderTable, type OrderRow } from "@/components/admin/OrderTable";
 import { OrdersKanban } from "@/components/admin/OrdersKanban";
 import { OrderViewToggle } from "@/components/admin/OrderViewToggle";
+import { SyncPaymentsButton } from "@/components/admin/SyncPaymentsButton";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 interface AdminOrdersPageProps {
@@ -92,7 +93,10 @@ export default async function AdminOrdersPage({ params, searchParams }: AdminOrd
         <h1 className="text-[20px] font-normal">
           {locale === "mn" ? "Захиалгууд" : "Orders"} ({orders.length})
         </h1>
-        <OrderViewToggle currentView={view ?? "table"} />
+        <div className="flex items-center gap-3">
+          <SyncPaymentsButton locale={locale} />
+          <OrderViewToggle currentView={view ?? "table"} />
+        </div>
       </div>
 
       {/* Status filter tabs — hidden in kanban view */}
