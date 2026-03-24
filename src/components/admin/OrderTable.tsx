@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { StatusBadge } from "@/components/ui/Badge";
 import { formatPrice } from "@/lib/utils";
@@ -35,6 +36,7 @@ function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
   function handleCopy(e: React.MouseEvent) {
     e.preventDefault();
+    e.stopPropagation();
     navigator.clipboard.writeText(text).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
@@ -61,6 +63,7 @@ function CopyButton({ text }: { text: string }) {
 }
 
 export function OrderTable({ orders, locale = "mn" }: OrderTableProps) {
+  const router = useRouter();
   if (orders.length === 0) {
     return (
       <p className="text-[13px] text-gray-400 py-8 text-center">
@@ -96,14 +99,15 @@ export function OrderTable({ orders, locale = "mn" }: OrderTableProps) {
         </thead>
         <tbody>
           {orders.map((order) => (
-            <tr key={order.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+            <tr
+              key={order.id}
+              onClick={() => router.push(`/${locale}/admin/orders/${order.id}`)}
+              className="border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer"
+            >
               <td className="py-3 pr-4">
-                <Link
-                  href={`/${locale}/admin/orders/${order.id}`}
-                  className="font-mono text-[11px] hover:underline"
-                >
+                <span className="font-mono text-[11px]">
                   {order.id.slice(0, 8).toUpperCase()}
-                </Link>
+                </span>
               </td>
               <td className="py-3 pr-4 text-gray-500">
                 {new Date(order.created_at).toLocaleDateString(locale === "mn" ? "mn-MN" : "en-US")}
